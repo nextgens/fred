@@ -1176,7 +1176,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
 		final long now = System.currentTimeMillis();
-		Logger.normal(this, "Disconnected " + this, new Exception("debug"));
+
+		String peerType = null;
+		if(this instanceof SeedClientPeerNode)
+		    peerType = " (seed Client)";
+		else if(this instanceof DarknetPeerNode)
+		    peerType = " (darknet)";
+		else if(this instanceof SeedServerPeerNode)
+		    peerType = " (seed Server)";
+
+		if(peerType != null)
+		    Logger.normal(this, "Disconnected " + this + peerType);
+		else
+		    Logger.error(this, "Disconnected " + this + " (unknown source)", new Exception("debug"));
+
 		node.usm.onDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);

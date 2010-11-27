@@ -1655,7 +1655,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			currentPeersLocation = newLocs;
 			locSetTime = System.currentTimeMillis();
 		}
-		node.peers.writePeers();
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 

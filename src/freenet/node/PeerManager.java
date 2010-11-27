@@ -51,6 +51,7 @@ import freenet.support.io.FileUtil;
 public class PeerManager {
 
         private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
         static {
             Logger.registerClass(PeerManager.class);
         }
@@ -1157,6 +1158,7 @@ public class PeerManager {
 	private final Object writePeerFileSync = new Object();
 
 	void writePeers() {
+		if(logDEBUG) Logger.debug(this, "Enterring PeerManager.writePeers() ", new Exception("Debug"));
 		shouldWritePeers = true;
 	}
 	

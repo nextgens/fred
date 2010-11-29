@@ -1730,7 +1730,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Then read the peers
 		peers = new PeerManager(this);
 		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
-		peers.writePeers();
+		peers.writePeers(null);
 		peers.updatePMUserAlert();
 
 		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
@@ -5062,7 +5062,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public boolean addPeerConnection(PeerNode pn) {
 		boolean retval = peers.addPeer(pn);
-		peers.writePeers();
+		peers.writePeers(pn);
 		return retval;
 	}
 

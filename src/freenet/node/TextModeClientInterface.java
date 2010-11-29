@@ -1201,7 +1201,7 @@ public class TextModeClientInterface implements Runnable {
 		}
         if(n.peers.addPeer(pn))
             System.out.println("Added peer: "+pn);
-        n.peers.writePeers();
+        n.peers.writePeers(pn);
     }
 
 	/**

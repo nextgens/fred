@@ -547,12 +547,12 @@ public class PeerManager {
 							done = true;
 						}
 						if(removePeer(pn) && !pn.isSeed())
-							writePeers();
+							writePeers(pn);
 					}
 				}, ctrDisconn);
 			} catch(NotConnectedException e) {
 				if(pn.isDisconnecting() && removePeer(pn) && !pn.isSeed())
-					writePeers();
+					writePeers(pn);
 				return;
 			}
                         if(!pn.isSeed()) {
@@ -560,14 +560,14 @@ public class PeerManager {
 
                                 public void run() {
                                     if (pn.isDisconnecting() && removePeer(pn) && !pn.isSeed()) {
-                                        writePeers();
+                                        writePeers(pn);
                                     }
                                 }
                             }, Node.MAX_PEER_INACTIVITY);
                         }
 		} else
 			if(removePeer(pn) && !pn.isSeed())
-				writePeers();
+				writePeers(pn);
 	}
 	final ByteCounter ctrDisconn = new ByteCounter() {
 
@@ -1157,8 +1157,9 @@ public class PeerManager {
 	private final Object writePeersSync = new Object();
 	private final Object writePeerFileSync = new Object();
 
-	void writePeers() {
-		if(logDEBUG) Logger.debug(this, "Enterring PeerManager.writePeers() ", new Exception("Debug"));
+	/** pn can be null */
+	void writePeers(PeerNode pn) {
+		if(logDEBUG) Logger.debug(this, "Enterring PeerManager.writePeers() because of "+pn, new Exception("Debug"));
 		shouldWritePeers = true;
 	}
 	

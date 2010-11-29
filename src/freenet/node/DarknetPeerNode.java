@@ -227,7 +227,7 @@ public class DarknetPeerNode extends PeerNode {
 			isDisabled = false;
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeers();
+		node.peers.writePeers(this);
 	}
 	
 	public void disablePeer() {
@@ -239,7 +239,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		stopARKFetcher();
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeers();
+		node.peers.writePeers(this);
 	}
 
 	@Override
@@ -258,7 +258,7 @@ public class DarknetPeerNode extends PeerNode {
 			stopARKFetcher();
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeers();
+		node.peers.writePeers(this);
 	}
 
 	public synchronized boolean isListenOnly() {
@@ -279,7 +279,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 		setPeerNodeStatus(now);
-		node.peers.writePeers();
+		node.peers.writePeers(this);
 	}
 
 	public void setIgnoreSourcePort(boolean setting) {
@@ -313,8 +313,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
-		node.peers.writePeers();
-		
+		node.peers.writePeers(this);
 	}
 
 	public boolean isIgnoreSourcePort() {
@@ -346,7 +345,7 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			allowLocalAddresses = setting;
 		}
-		node.peers.writePeers();
+		node.peers.writePeers(this);
 	}
 	
 	public boolean readExtraPeerData() {

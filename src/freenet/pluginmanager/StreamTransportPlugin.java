@@ -12,8 +12,8 @@ import freenet.io.comm.IncomingStreamHandler;
  */
 public abstract class StreamTransportPlugin extends TransportPlugin {
 	
-	public StreamTransportPlugin(boolean opennet, boolean darknet) {
-		super(opennet, darknet);
+	public StreamTransportPlugin(final String transportName, final boolean opennet, final boolean darknet) {
+		super(transportName, opennet, darknet);
 	}
 	
 	public final TransportType transportType = TransportType.streams;
@@ -21,9 +21,10 @@ public abstract class StreamTransportPlugin extends TransportPlugin {
 	/**
 	 * Method to connect to a peer
 	 * @param destination The peer address to connect to
+	 * @param isOpennet Whether it is an opennet connection or a darknet connection
 	 * @return A handle that contains the stream objects and more methods as required
 	 */
-	public abstract PluginStreamHandler connect(PluginAddress destination);
+	public abstract PluginStreamHandler connect(PluginAddress destination, boolean isOpennet);
 	
 	/**
 	 * Method to make a stream plugin listen to connections

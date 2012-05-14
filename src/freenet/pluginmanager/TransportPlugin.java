@@ -11,16 +11,15 @@ import java.net.InetAddress;
  */
 public abstract class TransportPlugin implements Runnable {
 	
-	public String transportName;
-	
-	public PluginAddress pluginAddress;
+	/**Unique name for every transport*/
+	public final String transportName;
 	
 	public enum TransportType{
 		streams, packets
 	}
 	
 	/**
-	 * Modes the plugin can work in. The plugin might be specifically designed to work on a particular mode
+	 * Modes the plugin can work in. The plugin might be specifically designed to work in a particular mode
 	 */
 	public final boolean opennet, darknet;
 	
@@ -30,7 +29,14 @@ public abstract class TransportPlugin implements Runnable {
 	 */
 	public abstract void stopTransportPlugin();
 	
-	public TransportPlugin(final boolean opennet, final boolean darknet){
+	/**The opennet PluginAddress the plugin is bound to, if it supports opennet mode*/
+	public abstract PluginAddress getOpennetPluginAddress();
+	
+	/**The darknet PluginAddress the plugin is bound to, if it supports darknet mode*/
+	public abstract PluginAddress getDarknetPluginAddress();
+	
+	public TransportPlugin(final String transportName, final boolean opennet, final boolean darknet){
+		this.transportName = transportName;
 		this.opennet = opennet;
 		this.darknet = darknet;
 	}

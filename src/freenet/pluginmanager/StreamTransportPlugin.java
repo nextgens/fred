@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import freenet.io.comm.IncomingStreamHandler;
+import freenet.node.Node;
+import freenet.node.TransportManager.TransportMode;
 
 /**
  * 
@@ -12,8 +14,8 @@ import freenet.io.comm.IncomingStreamHandler;
  */
 public abstract class StreamTransportPlugin extends TransportPlugin {
 	
-	public StreamTransportPlugin(final String transportName, final boolean opennet, final boolean darknet) {
-		super(transportName, opennet, darknet);
+	public StreamTransportPlugin(String transportName, TransportMode transportMode, Node node) {
+		super(transportName, transportMode, node);
 	}
 	
 	public final TransportType transportType = TransportType.streams;
@@ -21,10 +23,9 @@ public abstract class StreamTransportPlugin extends TransportPlugin {
 	/**
 	 * Method to connect to a peer
 	 * @param destination The peer address to connect to
-	 * @param isOpennet Whether it is an opennet connection or a darknet connection
 	 * @return A handle that contains the stream objects and more methods as required
 	 */
-	public abstract PluginStreamHandler connect(PluginAddress destination, boolean isOpennet);
+	public abstract PluginStreamHandler connect(PluginAddress destination);
 	
 	/**
 	 * Method to make a stream plugin listen to connections
@@ -42,13 +43,13 @@ public abstract class StreamTransportPlugin extends TransportPlugin {
  * @author chetan
  * 
  */
-abstract class PluginStreamHandler{
+interface PluginStreamHandler{
 	
-	public abstract InputStream getInputStream();
+	public InputStream getInputStream();
 	
-	public abstract OutputStream getOutputStream();
+	public OutputStream getOutputStream();
 	
-	public abstract void disconnect();
+	public void disconnect();
 	
 }
 /**
@@ -57,9 +58,9 @@ abstract class PluginStreamHandler{
  * @author chetan
  *
  */
-abstract class PluginConnectionListener{
+interface PluginConnectionListener{
 	
-	public abstract void close();
+	public void close();
 	
 }
 

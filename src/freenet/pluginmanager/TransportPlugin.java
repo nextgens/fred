@@ -59,18 +59,12 @@ public abstract class TransportPlugin implements Runnable {
 	 */
 	public abstract boolean setPluginAddress(PluginAddress pluginAddress);
 	
+	public abstract PluginAddress toPluginAddress(String address);
+	
 }
 
-class PluginAddress{
-	public InetAddress address;
-	public int portNumber;
+interface PluginAddress{
 	
-	public PluginAddress(InetAddress address, int portNumber){
-		this.address = address;
-		this.portNumber = portNumber;
-	}
+	public String toStringAddress();
 	
-	public String getAddress(){
-		return address.getHostAddress();
-	}
 }

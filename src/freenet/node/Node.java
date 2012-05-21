@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
@@ -115,6 +116,7 @@ import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.TransportManager.TransportMode;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FeedMessage;
 import freenet.node.stats.DataStoreInstanceType;
@@ -731,6 +733,20 @@ public class Node implements TimeSkewDetectorCallback {
 	private boolean acceptSeedConnections;
 	private boolean passOpennetRefsThroughDarknet;
 
+	// Transport stuff
+	/**
+	 * This object is used to track various transport managers.
+	 * Presently it will contain one for opennet and one for darknet modes.
+	 * We might need it for other modes too.
+	 * NodeCrypto 
+	 */
+	private HashMap<TransportMode, TransportManager> transportManagers;
+	
+	/**This will be used for transports functioning inside fred. They are not plugins*/
+	public final String defaultPacketTransportName = "DefaultUDP";
+	/**This will be used for transports functioning inside fred. They are not plugins*/
+	public final String defaultStreamTransportName = "DefaultTCP";
+	
 	// General stuff
 
 	public final Executor executor;
@@ -1564,6 +1580,18 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		enablePacketCoalescing = nodeConfig.getBoolean("enablePacketCoalescing");
 
+		/**
+		 * Initialise two transport Managers. Even if opennet is not enabled.
+		 * This helps the plugin register for opennet even though opennet is not enabled
+		 */
+		TransportManager darknetTransportManager = new TransportManager(this, TransportMode.darknet);
+		TransportManager opennetTransportManager = new TransportManager(this, TransportMode.opennet);
+		
+		transportManagers = new HashMap<TransportMode, TransportManager> ();
+		
+		transportManagers.put(darknetTransportManager.transportMode, darknetTransportManager);
+		transportManagers.put(opennetTransportManager.transportMode, opennetTransportManager);
+		
 		// Determine the port number
 		// @see #191
 		if(oldConfig != null && "-1".equals(oldConfig.get("node.listenPort")))
@@ -6333,6 +6361,10 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	public boolean enableNewLoadManagement(boolean realTimeFlag) {
 		return nodeStats.enableNewLoadManagement(realTimeFlag);
+	}
+	
+	public HashMap<TransportMode, TransportManager> getTransports(){
+		return transportManagers;
 	}
 
 }

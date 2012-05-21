@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.zip.DeflaterOutputStream;
 
 import net.i2p.util.NativeBigInteger;
@@ -36,6 +37,9 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.node.TransportManager.TransportMode;
+import freenet.pluginmanager.PacketTransportPlugin;
+import freenet.pluginmanager.StreamTransportPlugin;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
@@ -55,6 +59,7 @@ public class NodeCrypto {
 	public static final int IDENTITY_LENGTH = 32;
 	final Node node;
 	final boolean isOpennet;
+	final TransportMode transportMode;
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
 	final UdpSocketHandler socket;
@@ -111,7 +116,9 @@ public class NodeCrypto {
 		this.config = config;
 		random = node.random;
 		this.isOpennet = isOpennet;
-
+		
+		transportMode = isOpennet ? TransportMode.opennet:TransportMode.darknet;
+		
 		config.starting(this);
 
 		try {
@@ -129,7 +136,7 @@ public class NodeCrypto {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.collector);
+					u = new UdpSocketHandler(transportMode, portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.collector);
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -143,7 +150,7 @@ public class NodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.collector);
+				u = new UdpSocketHandler(transportMode, port, bindto.getAddress(), node, startupTime, getTitle(port), node.collector);
 			} catch (Exception e) {
 				Logger.error(this, "Caught "+e, e);
 				System.err.println(e);
@@ -181,6 +188,33 @@ public class NodeCrypto {
 		} finally {
 			config.maybeStarted(this);
 		}
+		
+		/*
+		 * This code is for all transports. Parts of the above code will be replaced in future when UDP becomes a plugin.
+		 * Presently we want fred to start using UDP transport inherently and by default.
+		 * If other transports are available then handleNewTransport method is called.
+		 * Some scenarios-
+		 * 1. opennet is started after the plugins have been loaded
+		 * 2. darknet is always started at the beginning, when the plugins haven't loaded. Still they check if transports exist
+		 */
+		TransportManager transportManager = node.getTransports().get(transportMode);
+		
+		transportManager.addDefaultTransport(socket);
+		
+		HashMap<String, PacketTransportPlugin> packetTransports = transportManager.getPacketTransportMap();
+		HashMap<String, StreamTransportPlugin> streamTransports = transportManager.getStreamTransportMap();
+		
+		for(String e:packetTransports.keySet()){
+			if(e.equals(node.defaultPacketTransportName))
+				continue; //Don't handle default transport as they are handled inherently
+			handleNewTransport(packetTransports.get(e));
+		}
+		for(String e:streamTransports.keySet()){
+			if(e.equals(node.defaultStreamTransportName))
+				continue; //Don't handle default transport as they are handled inherently
+			handleNewTransport(streamTransports.get(e));
+		}
+		
 	}
 
 	private String getTitle(int port) {
@@ -640,6 +674,26 @@ public class NodeCrypto {
 	
 	public boolean wantAnonAuthChangeIP() {
 		return node.wantAnonAuthChangeIP(isOpennet);
+	}
+	
+	/**
+	 * This method is for the issue that transport plugins might be loaded much later,
+	 * after initialization of this object. 
+	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.
+	 * @param Stream type transport
+	 */
+	public void handleNewTransport(PacketTransportPlugin transportPlugin){
+		
+	}	
+	
+	/**
+	 * This method is for the issue that transport plugins might be loaded much later,
+	 * after initialization of this object. 
+	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.
+	 * @param Stream type transport
+	 */
+	public void handleNewTransport(StreamTransportPlugin transportPlugin){
+		
 	}
 
 }

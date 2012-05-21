@@ -54,8 +54,18 @@ public class TransportManager {
 		
 		packetTransportMap.put(transportPlugin.transportName, transportPlugin);
 		
-		//FIXME finish calling nodecrypto
+		if(transportMode == TransportMode.opennet){
+			if(node.opennet != null){
+				node.opennet.crypto.handleNewTransport(transportPlugin);
+				return true;
+			}
+			else
+				return false;
+		}
+		//Assuming only two modes exist currently. darknet mode is created by default
+		node.darknetCrypto.handleNewTransport(transportPlugin);
 		return true;
+	
 	}
 	
 	/**The register method will allow a transport to register with the manager, so freenet can use it
@@ -80,17 +90,50 @@ public class TransportManager {
 		
 		streamTransportMap.put(transportPlugin.transportName, transportPlugin);
 		
-		//FIXME finish calling nodecrypto
+		if(transportMode == TransportMode.opennet){
+			if(node.opennet != null){
+				node.opennet.crypto.handleNewTransport(transportPlugin);
+				return true;
+			}
+			else
+				return false;
+		}
+		//Assuming only two modes exist currently. darknet mode is created by default
+		node.darknetCrypto.handleNewTransport(transportPlugin);
 		return true;
+		
 	}
 	
-	public HashMap<String, PacketTransportPlugin> getPacketTransportMap(){
+	//Do not change to public. We might end up allowing plugins to access other plugins.
+	
+	HashMap<String, PacketTransportPlugin> getPacketTransportMap(){
 		return packetTransportMap;
 	}
 	
-	public HashMap<String, StreamTransportPlugin> getStreamTransportMap(){
+	HashMap<String, StreamTransportPlugin> getStreamTransportMap(){
 		return streamTransportMap;
 	}
 	
+	/**
+	 * This is for transports that are loaded by default. The code is present in the core of fred. For e.g. existing UDPSocketHandler
+	 * The advantage is that freenet can load faster for normal users who don't want to use plugins
+	 * The visibility of this method is default, package-locale access. We won't allow other classes to add here.
+	 * The default plugin is added at the beginning. For UDPSocketHandler it is created in the NodeCrypto object.
+	 * @param transportPlugin
+	 */
+	void addDefaultTransport(PacketTransportPlugin transportPlugin){
+		packetTransportMap.put(transportPlugin.transportName, transportPlugin);
+	}
+	/**
+	 * This is for transports that are loaded by default. The code is present in the core of fred. For e.g. existing UDPSockethandler
+	 * The advantage is that freenet can load faster for normal users who don't want to use plugins
+	 * The visibility of this method is default, package-locale access. We won't allow other classes to add here.
+	 * We still don't have a TCP default plugin. But we will need one.
+	 * The default plugin is added at the beginning.
+	 * @param transportPlugin
+	 */
+	void addDefaultTransport(StreamTransportPlugin transportPlugin){
+		streamTransportMap.put(transportPlugin.transportName, transportPlugin);
+	}
 	
 }

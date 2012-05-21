@@ -7,19 +7,24 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Random;
 
 import freenet.io.AddressTracker;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.Node;
 import freenet.node.PrioRunnable;
+import freenet.node.TransportManager.TransportMode;
+import freenet.pluginmanager.PacketTransportPlugin;
+import freenet.pluginmanager.PluginAddress;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.IPUtil;
 
-public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, PortForwardSensitiveSocketHandler {
+public class UdpSocketHandler extends PacketTransportPlugin  implements PrioRunnable, PortForwardSensitiveSocketHandler {
 
+	public PluginAddress pluginAddress;
 	private final DatagramSocket _sock;
 	private final InetAddress _bindTo;
 	private final AddressTracker tracker;
@@ -46,7 +51,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
             Logger.registerClass(UdpSocketHandler.class);
         }
 
-	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
+	public UdpSocketHandler(TransportMode transportMode, int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
+		super(node.defaultPacketTransportName, transportMode, node);
 		this.node = node;
 		this.collector = collector;
 		this.title = title;
@@ -57,6 +63,10 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 //			_sock = (DatagramSocket) Updater.getResource();
 //		} else {
 		this.listenPort = listenPort;
+		
+		/**Creates a plugin address. May not be used. Maybe required in the future.*/
+		pluginAddress = new PluginAddressImpl(_bindTo, listenPort);
+		
 		_sock = new DatagramSocket(listenPort, bindto);
 		int sz = _sock.getReceiveBufferSize();
 		if(sz < 65536) {
@@ -389,4 +399,82 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		return startTime;
 	}
 
+	/*
+	 * The following methods implement TransportPlugin. This would be the default packet transport plugin.
+	 * Most methods are non-functional or are not used by fred. 
+	 * In the future we maybe able to use them.
+	 * I have written only a quick implementation (no logs, comments) as most of it won't be used.
+	 * 
+	 */
+	
+	@Override
+	public boolean initPlugin(PluginAddress pluginAddress, IOStatisticCollector collector, long startTime) {
+		return false; //The plugin is initialised at start()
+	}
+
+	@Override
+	public boolean pauseTransportPlugin() {
+		return false; 
+		/*
+		 * Default UDP cannot be paused for now.
+		 * It has been already discussed on freenet that pausing would encourage users to keep in pause state always.
+		 * This method is only for other transports which might need to be paused for other reasons
+		 */
+	}
+	
+	@Override
+	public boolean resumeTransportPlugin() {
+		return false;
+	}
+
+	@Override
+	public PluginAddress getPluginAddress() {
+		return pluginAddress;
+	}
+
+	@Override
+	public boolean setPluginAddress(PluginAddress pluginAddress) {
+		return false; //The default is coded inherently. We don't need this method
+	}
+
+	/**
+	 * Convert a simple string address into a plugin address
+	 */
+	@Override
+	public PluginAddress toPluginAddress(String address) {
+		PluginAddress pluginAddress;
+		String stringAddress = address.substring(0, address.indexOf(':'));
+		int portNumber = Integer.parseInt(address.substring(address.indexOf(':') + 1));
+		InetAddress inetAddress;
+		try {
+			inetAddress = InetAddress.getByName(stringAddress);
+			pluginAddress = new PluginAddressImpl(inetAddress, portNumber);
+			return pluginAddress;
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+}
+
+
+/**
+ * Simple implementation of PluginAddress for the TransportPlugin type
+ * @author chetan
+ *
+ */
+class PluginAddressImpl implements PluginAddress{
+	InetAddress inetAddress;
+	int portNumber;
+	
+	PluginAddressImpl(InetAddress inetAddress, int portNumber){
+		this.inetAddress = inetAddress;
+		this.portNumber = portNumber;
+	}
+	
+	@Override
+	public String toStringAddress() {
+		return (inetAddress.getHostAddress() + ":" + portNumber);
+	}
 }

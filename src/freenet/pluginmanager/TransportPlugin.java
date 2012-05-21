@@ -45,11 +45,19 @@ public abstract class TransportPlugin implements Runnable {
 	 */
 	public abstract boolean initPlugin(PluginAddress pluginAddress, IOStatisticCollector collector, long startTime);
 	
-	/**Method to stop a plugin, not terminate it.  
+	/**Method to pause a plugin, not terminate it.  
 	 * Can be used for temporarily stopping a plugin, or putting it to sleep state.
 	 * Don't know if this method is really necessary. 
+	 * But it would provide an implementation that could effectively handle stopping traffic, still keeping peers alive.
+	 * Users can start using this unnecessarily, affecting freenet. Therefore it is available only for plugins.
+	 * Default transports such as existing UDP (or simple TCP in the future) which are run inside fred cannot be paused.
+	 * Others might have a requirement. Otherwise this method should not be implemented to benefit users.  
+	 * @return true if successful
 	 */
-	public abstract void stopTransportPlugin();
+	public abstract boolean pauseTransportPlugin();
+	
+	/** To resume a stopped plugin*/
+	public abstract boolean resumeTransportPlugin();
 
 	/** The PluginAddress the plugin is bound to. */
 	public abstract PluginAddress getPluginAddress();
@@ -63,8 +71,3 @@ public abstract class TransportPlugin implements Runnable {
 	
 }
 
-interface PluginAddress{
-	
-	public String toStringAddress();
-	
-}

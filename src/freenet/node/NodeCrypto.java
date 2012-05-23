@@ -59,7 +59,20 @@ public class NodeCrypto {
 	public static final int IDENTITY_LENGTH = 32;
 	final Node node;
 	final boolean isOpennet;
+	
+	/*
+	 * Code related to all transport plugins.
+	 * Includes packetmangler objects for packet transports
+	 */
 	final TransportMode transportMode;
+	/** Copy of packet transports got from the transport manager */
+	HashMap<String, PacketTransportPlugin> packetTransports;
+	/** Copy of stream transports got from the transport manager */
+	HashMap<String, StreamTransportPlugin> streamTransports;
+	/** A map of PacketMangler objects corresponding to each packet transports (using the transport's name) */
+	HashMap<String, FNPPacketMangler> packetManglerMap = new HashMap<String, FNPPacketMangler> ();
+	
+	
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
 	final UdpSocketHandler socket;
@@ -201,8 +214,8 @@ public class NodeCrypto {
 		
 		transportManager.addDefaultTransport(socket);
 		
-		HashMap<String, PacketTransportPlugin> packetTransports = transportManager.getPacketTransportMap();
-		HashMap<String, StreamTransportPlugin> streamTransports = transportManager.getStreamTransportMap();
+		packetTransports = transportManager.getPacketTransportMap();
+		streamTransports = transportManager.getStreamTransportMap();
 		
 		for(String e:packetTransports.keySet()){
 			if(e.equals(node.defaultPacketTransportName))
@@ -684,6 +697,13 @@ public class NodeCrypto {
 	 */
 	public void handleNewTransport(PacketTransportPlugin transportPlugin){
 		
+		FNPPacketMangler mangler = new FNPPacketMangler(node, this, transportPlugin);
+		packetManglerMap.put(transportPlugin.transportName, mangler);
+		transportPlugin.setLowLevelFilter(new IncomingPacketFilterImpl(mangler, node, this));
+		
+		//FIXME Have a separate collector and see if we want to try and set the address. Also handle the return value
+		transportPlugin.initPlugin(null, null, 0);
+		mangler.start();
 	}	
 	
 	/**
@@ -691,6 +711,7 @@ public class NodeCrypto {
 	 * after initialization of this object. 
 	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.
 	 * @param Stream type transport
+	 * FIXME This part will begin once packets transport are completed
 	 */
 	public void handleNewTransport(StreamTransportPlugin transportPlugin){
 		

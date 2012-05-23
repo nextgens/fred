@@ -1,8 +1,10 @@
 package freenet.pluginmanager;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import freenet.io.comm.IOStatisticCollector;
+import freenet.io.comm.PeerParseException;
 import freenet.node.Node;
 import freenet.node.TransportManager.TransportMode;
 
@@ -36,7 +38,7 @@ public abstract class TransportPlugin implements Runnable {
 	}
 	
 	/**
-	 * Method to initialise and start the plugin.
+	 * Method to initialise and start the plugin. It must create its own thread for listening.
 	 * @param pluginAddress If plugin is configurable then the pluginAddress is used to bind
 	 * @param collector If plugin supports sharing statistics, then the object will be used
 	 * @param startTime 
@@ -67,7 +69,7 @@ public abstract class TransportPlugin implements Runnable {
 	 */
 	public abstract boolean setPluginAddress(PluginAddress pluginAddress);
 	
-	public abstract PluginAddress toPluginAddress(String address);
+	public abstract PluginAddress toPluginAddress(String address) throws UnknownHostException, PeerParseException;
 	
 }
 

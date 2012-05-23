@@ -441,19 +441,26 @@ public class UdpSocketHandler extends PacketTransportPlugin  implements PrioRunn
 	 * Convert a simple string address into a plugin address
 	 */
 	@Override
-	public PluginAddress toPluginAddress(String address) {
+	public PluginAddress toPluginAddress(String address) throws UnknownHostException, PeerParseException {
 		PluginAddress pluginAddress;
-		String stringAddress = address.substring(0, address.indexOf(':'));
-		int portNumber = Integer.parseInt(address.substring(address.indexOf(':') + 1));
+		int offset = address.lastIndexOf(':');
+		if(offset < 0) 
+			throw new PeerParseException();
+		String stringAddress = address.substring(0, offset);
 		InetAddress inetAddress;
+		inetAddress = InetAddress.getByName(stringAddress);
+		
+		int portNumber;
 		try {
-			inetAddress = InetAddress.getByName(stringAddress);
-			pluginAddress = new PluginAddressImpl(inetAddress, portNumber);
-			return pluginAddress;
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			return null;
-		}
+			portNumber = Integer.parseInt(address.substring(offset + 1));
+            if(portNumber < 0 || portNumber > 65535)
+            	throw new PeerParseException("Invalid port "+ portNumber);
+        } catch (NumberFormatException e) {
+            throw new PeerParseException(e);
+        }
+		
+		pluginAddress = new PluginAddressImpl(inetAddress, portNumber);
+		return pluginAddress;
 	}
 
 }

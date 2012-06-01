@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Vector;
 import java.util.zip.DeflaterOutputStream;
 
 import net.i2p.util.NativeBigInteger;
@@ -64,14 +65,21 @@ public class NodeCrypto {
 	 * Code related to all transport plugins.
 	 * Includes packetmangler objects for packet transports
 	 */
+	/** This is different from isOpennet, as we can have new modes of operation (e.g. introductions) */
 	final TransportMode transportMode;
+	/** The transportManager for the mode of operation(darknet, opennet) */
+	public TransportManager transportManager;
 	/** Copy of packet transports got from the transport manager */
-	HashMap<String, PacketTransportPlugin> packetTransports;
+	HashMap<String, PacketTransportPlugin> packetTransportMap;
 	/** Copy of stream transports got from the transport manager */
-	HashMap<String, StreamTransportPlugin> streamTransports;
-	/** A map of PacketMangler objects corresponding to each packet transports (using the transport's name) */
-	HashMap<String, FNPPacketMangler> packetManglerMap = new HashMap<String, FNPPacketMangler> ();
+	HashMap<String, StreamTransportPlugin> streamTransportMap;
+	/** A list of packet transport with mangler objects and keys. Each PeerNode will use a copy of it.
+	 * We must ensure we take inform existing PeerNode of a new transport.
+	 * All new PeerNode must know of the existing transports.
+	 */
+	private HashMap<String, PeerPacketTransport> peerPacketTransportMap = new HashMap<String, PeerPacketTransport> ();
 	
+	private HashMap<String, PeerStreamTransport> peerStreamTransportMap = new HashMap<String, PeerStreamTransport> ();
 	
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
@@ -210,22 +218,25 @@ public class NodeCrypto {
 		 * 1. opennet is started after the plugins have been loaded
 		 * 2. darknet is always started at the beginning, when the plugins haven't loaded. Still they check if transports exist
 		 */
-		TransportManager transportManager = node.getTransports().get(transportMode);
+		transportManager = node.getTransports().get(transportMode);
 		
 		transportManager.addDefaultTransport(socket);
 		
-		packetTransports = transportManager.getPacketTransportMap();
-		streamTransports = transportManager.getStreamTransportMap();
+		packetTransportMap = transportManager.getPacketTransportMap();
+		streamTransportMap = transportManager.getStreamTransportMap();
 		
-		for(String e:packetTransports.keySet()){
+		PeerPacketTransport peerPacketTransport = new PeerPacketTransport(socket, packetMangler);
+		peerPacketTransportMap.put(peerPacketTransport.transportPlugin.transportName, peerPacketTransport);
+		
+		for(String e:packetTransportMap.keySet()){
 			if(e.equals(node.defaultPacketTransportName))
 				continue; //Don't handle default transport as they are handled inherently
-			handleNewTransport(packetTransports.get(e));
+			handleNewTransport(packetTransportMap.get(e));
 		}
-		for(String e:streamTransports.keySet()){
+		for(String e:streamTransportMap.keySet()){
 			if(e.equals(node.defaultStreamTransportName))
 				continue; //Don't handle default transport as they are handled inherently
-			handleNewTransport(streamTransports.get(e));
+			handleNewTransport(streamTransportMap.get(e));
 		}
 		
 	}
@@ -698,12 +709,19 @@ public class NodeCrypto {
 	public void handleNewTransport(PacketTransportPlugin transportPlugin){
 		
 		FNPPacketMangler mangler = new FNPPacketMangler(node, this, transportPlugin);
-		packetManglerMap.put(transportPlugin.transportName, mangler);
+		PeerPacketTransport peerPacketTransport = new PeerPacketTransport(transportPlugin, mangler);
+		peerPacketTransportMap.put(transportPlugin.transportName, peerPacketTransport); 
 		transportPlugin.setLowLevelFilter(new IncomingPacketFilterImpl(mangler, node, this));
 		
 		//FIXME Have a separate collector and see if we want to try and set the address. Also handle the return value
 		transportPlugin.initPlugin(null, null, 0);
 		mangler.start();
+		synchronized(node){
+			PeerNode[] peers = getPeerNodes();
+			for(PeerNode peer: peers){
+				peer.handleNewPeerTransport(peerPacketTransport);
+			}
+		}
 	}	
 	
 	/**
@@ -715,6 +733,18 @@ public class NodeCrypto {
 	 */
 	public void handleNewTransport(StreamTransportPlugin transportPlugin){
 		
+	}
+	
+	public HashMap<String, PeerPacketTransport> getPeerPacketTransportMap(){
+		synchronized(peerPacketTransportMap){
+			return peerPacketTransportMap;
+		}
+	}
+	
+	public synchronized HashMap<String, PeerStreamTransport> getPeerStreamTransportMap(){
+		synchronized(peerStreamTransportMap){
+			return peerStreamTransportMap;
+		}
 	}
 
 }

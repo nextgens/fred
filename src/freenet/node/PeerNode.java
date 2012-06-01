@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -119,6 +120,26 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private byte[] jfkBuffer;
 	//TODO: sync ?
 
+	/**
+	 * This deals with a PeerPacketTransport object that will have a list of active transports for which setup can be done.
+	 */
+	private HashMap<String, PeerPacketTransport> peerPacketTransportMap = new HashMap<String, PeerPacketTransport> ();
+	
+	/**
+	 * This deals with a PeerConnection object that can handle all the keys for a transport.
+	 */
+	private HashMap<String, PeerPacketConnection> peerPacketConnMap = new HashMap<String, PeerPacketConnection> ();
+	
+	/**
+	 * This deals with a PeerStreamTransport object that will have a list of active transports for which setup can be done.
+	 */
+	private HashMap<String, PeerStreamTransport> peerStreamTransportMap = new HashMap<String, PeerStreamTransport> ();
+	
+	/**
+	 * This deals with a PeerConnection object that can handle all the keys for a transport.
+	 */
+	private HashMap<String, PeerStreamConnection> peerStreamConnMap = new HashMap<String, PeerStreamConnection> ();
+	
 	protected byte[] jfkKa;
 	protected byte[] incommingKey;
 	protected byte[] jfkKe;
@@ -448,6 +469,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
+		/*
+		 * Get a list of PeerTransport objects - Packets and Streams from the crypto object
+		 */
+		peerPacketTransportMap = crypto.getPeerPacketTransportMap();
+		peerStreamTransportMap = crypto.getPeerStreamTransportMap();
+		
 		assert(crypto.isOpennet == (isOpennet() || isSeed()));
 		this.peers = peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
@@ -6402,6 +6429,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				consecutiveGuaranteedRejectsBulk = 0;
 			}
 		}
+	}
+	
+	/*
+	 * Must be careful using the following two methods as they use hashmap.
+	 * If transportName is same then the object is replaced. We want to use transportName as a unique identifier. 
+	 */
+	public void handleNewPeerTransport(PeerPacketTransport peerPacketTransport){
+		peerPacketTransportMap.put(peerPacketTransport.transportPlugin.transportName, peerPacketTransport);
+	}
+	
+	public void handleNewPeerTransport(PeerStreamTransport peerStreamTransport){
+		peerStreamTransportMap.put(peerStreamTransport.transportPlugin.transportName, peerStreamTransport);
 	}
 	
 }

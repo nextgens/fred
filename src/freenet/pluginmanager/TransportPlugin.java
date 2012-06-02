@@ -31,7 +31,7 @@ public abstract class TransportPlugin implements Runnable {
 	
 	public final Node node;
 	
-	public TransportPlugin(final String transportName, final TransportMode transportMode, Node node){
+	public TransportPlugin(String transportName, TransportMode transportMode, Node node){
 		this.transportName = transportName;
 		this.transportMode = transportMode;
 		this.node = node;

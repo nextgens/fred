@@ -46,6 +46,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.PacketTransportPlugin;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
@@ -85,7 +86,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	private final Node node;
 	private final NodeCrypto crypto;
 	private final MessageCore usm;
-	private final PacketSocketHandler sock;
+	/*
+	 * This object was of type PacketSocketHandler, but now PacketTransportPlugin extends PacketSocketHandler.
+	 */
+	private final PacketTransportPlugin sock;
 	private final EntropySource myPacketDataSource;
 	/**
 	 * Objects cached during JFK message exchange: JFK(3,4) with authenticator as key
@@ -170,7 +174,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
         private Status lastConnectivityStatus;
 
 
-	public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
+	public FNPPacketMangler(Node node, NodeCrypto crypt, PacketTransportPlugin sock) {
 		this.node = node;
 		this.crypto = crypt;
 		this.usm = node.usm;

@@ -6443,4 +6443,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		peerStreamTransportMap.put(peerStreamTransport.transportPlugin.transportName, peerStreamTransport);
 	}
 	
+	public void sendHandshake(boolean notRegistered){
+		outgoingMangler.sendHandshake(this, notRegistered);
+		//FIXME make this for all transports
+	}
+	
 }

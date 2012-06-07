@@ -15,10 +15,8 @@ import freenet.node.TransportManager.TransportMode;
 public abstract class StreamTransportPlugin extends TransportPlugin {
 	
 	public StreamTransportPlugin(String transportName, TransportMode transportMode, Node node) {
-		super(transportName, transportMode, node);
+		super(TransportType.streams, transportName, transportMode, node);
 	}
-	
-	public final TransportType transportType = TransportType.streams;
 	
 	/**
 	 * Method to connect to a peer

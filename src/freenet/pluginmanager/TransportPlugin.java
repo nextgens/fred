@@ -1,6 +1,5 @@
 package freenet.pluginmanager;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import freenet.io.comm.IOStatisticCollector;
@@ -24,6 +23,8 @@ public abstract class TransportPlugin implements Runnable {
 		streams, packets
 	}
 	
+	public final TransportType transportType;
+	
 	/**
 	 * Initialize the mode in which the instance of the plugin is to work in.
 	 */
@@ -31,7 +32,8 @@ public abstract class TransportPlugin implements Runnable {
 	
 	public final Node node;
 	
-	public TransportPlugin(String transportName, TransportMode transportMode, Node node){
+	public TransportPlugin(TransportType transportType, String transportName, TransportMode transportMode, Node node){
+		this.transportType = transportType;
 		this.transportName = transportName;
 		this.transportMode = transportMode;
 		this.node = node;

@@ -4,7 +4,8 @@ package freenet.node;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
-import freenet.pluginmanager.TransportPlugin;
+import freenet.pluginmanager.PacketTransportPlugin;
+
 /**
  * This object will be used by PeerNode to maintain sessions keys for various transports. 
  * A list of PeerConnection will be maintained by PeerNode to handle multiple transports 
@@ -16,7 +17,7 @@ public class PeerPacketConnection {
 	/** Every connection can belong to only one peernode. */
 	protected PeerNode pn;
 	/** The transport this connection is using. */
-	protected TransportPlugin transportPlugin;
+	protected PacketTransportPlugin transportPlugin;
 	
 	/** Mangler to handle connections for different transports */
 	protected OutgoingPacketMangler packetMangler;
@@ -31,7 +32,7 @@ public class PeerPacketConnection {
 	 */
 	protected Vector<SessionKey> keys;
 	
-	PeerPacketConnection(PeerNode pn, TransportPlugin transportPlugin, OutgoingPacketMangler packetMangler, PacketFormat packetFormat, Peer detectedPeer){
+	PeerPacketConnection(PeerNode pn, PacketTransportPlugin transportPlugin, OutgoingPacketMangler packetMangler, PacketFormat packetFormat, Peer detectedPeer){
 		this.pn = pn;
 		this.transportPlugin = transportPlugin;
 		this.packetMangler = packetMangler;

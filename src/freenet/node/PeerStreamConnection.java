@@ -3,7 +3,7 @@ package freenet.node;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
-import freenet.pluginmanager.TransportPlugin;
+import freenet.pluginmanager.StreamTransportPlugin;
 
 public class PeerStreamConnection {
 	
@@ -11,7 +11,13 @@ public class PeerStreamConnection {
 	protected PeerNode pn;
 	
 	/** The transport this connection is using. */
-	protected TransportPlugin transportPlugin;
+	protected StreamTransportPlugin transportPlugin;
+	
+	/** Mangler to handle connections for different transports */
+	protected OutgoingStreamMangler streamMangler;
+	
+	/** The object that runs this connection. Analogous to NewPacketFormat and PacketSender */
+	protected StreamConnectionFormat streamConnection;
 	
 	/** The peer it connects to */
 	protected Peer detectedPeer;

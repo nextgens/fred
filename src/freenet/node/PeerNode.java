@@ -70,6 +70,9 @@ import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.pluginmanager.TransportPlugin;
+import freenet.pluginmanager.TransportPlugin.TransportType;
+import freenet.pluginmanager.TransportPluginException;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -888,6 +891,30 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	@Override
 	public synchronized Peer getPeer() {
 		return detectedPeer;
+	}
+	
+	/**
+	 * This method is needed since different Transports might have different Peers.
+	 * This can be different port, different connection type(hence physical location itself)
+	 * @param transportPlugin 
+	 * @return Null if the detected Peer is null.
+	 * @throws TransportPluginException If this PeerNode does not use this particular transport
+	 */
+	public synchronized Peer getPeer(TransportPlugin transportPlugin) throws TransportPluginException{
+		if(transportPlugin.transportType == TransportType.packets){
+			if(peerPacketTransportMap.containsKey(transportPlugin.transportName))
+				return (peerPacketTransportMap.get(transportPlugin.transportName)).detectedTransportPeer;
+			else
+				throw new TransportPluginException("This plugin is not available for this PeerNode");
+		}
+		else if(transportPlugin.transportType == TransportType.streams){
+			if(peerStreamTransportMap.containsKey(transportPlugin.transportName))
+				return (peerStreamTransportMap.get(transportPlugin.transportName)).detectedTransportPeer;
+			else
+				throw new TransportPluginException("This plugin is not available for this PeerNode");
+		}
+		else
+			return null; //We return null, but this test case should not arise until a new type of Transport is found!
 	}
 
 	/**

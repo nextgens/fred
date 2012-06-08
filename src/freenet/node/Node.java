@@ -742,10 +742,14 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	private HashMap<TransportMode, TransportManager> transportManagers;
 	
+	/**
+	 * This will be used for transports functioning inside fred.
+	 * They are not plugins. Used to make existing UDP behave like a plugin. 
+	 * So it will accessed like before "physical.udp".
+	 */
+	public final String defaultPacketTransportName = "udp";
 	/**This will be used for transports functioning inside fred. They are not plugins*/
-	public final String defaultPacketTransportName = "DefaultUDP";
-	/**This will be used for transports functioning inside fred. They are not plugins*/
-	public final String defaultStreamTransportName = "DefaultTCP";
+	public final String defaultStreamTransportName = "tcp";
 	
 	// General stuff
 

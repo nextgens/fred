@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import freenet.io.WritableToDataOutputStream;
+import freenet.node.Node;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
 
@@ -45,16 +46,19 @@ public class Peer implements WritableToDataOutputStream {
 
     private final FreenetInetAddress addr;
 	private final int _port;
+	protected final String transportName;
 
 	public Peer(DataInput dis) throws IOException {
 		addr = new FreenetInetAddress(dis);
 		_port = dis.readInt();
+		transportName = Node.defaultPacketTransportName;
 		if(_port > 65535 || _port < 0) throw new IOException("bogus port");
 	}
 
 	public Peer(DataInput dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, IOException {
 		addr = new FreenetInetAddress(dis, checkHostnameOrIPSyntax);
 		_port = dis.readInt();
+		transportName = Node.defaultPacketTransportName;
 		if(_port > 65535 || _port < 0) throw new IOException("bogus port");
 	}
 
@@ -66,6 +70,7 @@ public class Peer implements WritableToDataOutputStream {
 	public Peer(InetAddress address, int port) {
 		addr = new FreenetInetAddress(address);
 		_port = port;
+		transportName = Node.defaultPacketTransportName;
 		if(_port > 65535 || _port < 0) throw new IllegalArgumentException("bogus port");
 	}
 
@@ -87,6 +92,7 @@ public class Peer implements WritableToDataOutputStream {
         if(offset < 0) throw new PeerParseException();
         String host = physical.substring(0, offset);
         addr = new FreenetInetAddress(host, allowUnknown);
+        transportName = Node.defaultPacketTransportName;
         String strport = physical.substring(offset+1);
         try {
             _port = Integer.parseInt(strport);
@@ -119,6 +125,7 @@ public class Peer implements WritableToDataOutputStream {
         	throw new PeerParseException("No port number: \""+physical+"\"");
         String host = physical.substring(0, offset);
         addr = new FreenetInetAddress(host, allowUnknown, checkHostnameOrIPSyntax);
+        transportName = Node.defaultPacketTransportName;
         String strport = physical.substring(offset+1);
         try {
             _port = Integer.parseInt(strport);
@@ -130,6 +137,7 @@ public class Peer implements WritableToDataOutputStream {
     
     public Peer(FreenetInetAddress addr, int port) {
     	this.addr = addr;
+    	transportName = Node.defaultPacketTransportName;
     	if(addr == null) throw new NullPointerException();
     	this._port = port;
 		if(_port > 65535 || _port < 0) throw new IllegalArgumentException("bogus port");

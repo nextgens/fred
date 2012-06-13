@@ -70,6 +70,8 @@ import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.pluginmanager.PacketTransportPlugin;
+import freenet.pluginmanager.StreamTransportPlugin;
 import freenet.pluginmanager.TransportPlugin;
 import freenet.pluginmanager.TransportPlugin.TransportType;
 import freenet.pluginmanager.TransportPluginException;
@@ -4240,6 +4242,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public OutgoingPacketMangler getOutgoingMangler() {
 		return outgoingMangler;
 	}
+	
+	public OutgoingPacketMangler getOutgoingMangler(PacketTransportPlugin transportPlugin){
+		return peerPacketTransportMap.get(transportPlugin.transportName).packetMangler;
+	}
+	
+	public OutgoingStreamMangler getOutgoingMangler(StreamTransportPlugin transportPlugin){
+		return peerStreamTransportMap.get(transportPlugin.transportName).streamMangler;
+	}
 
 	@Override
 	public SocketHandler getSocketHandler() {
@@ -6474,5 +6484,103 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		outgoingMangler.sendHandshake(this, notRegistered);
 		//FIXME make this for all transports
 	}
+	
+	/**
+	 * This method should be called when a particular transport has disconnected. 
+	 * @param transportPlugin The transport that we need to handshake with.
+	 * @param notRegistered
+	 * @throws TransportPluginException Thrown if this PeerNode does not use the transport
+	 */
+	public void sendTransportHandshake(TransportPlugin transportPlugin, boolean notRegistered) throws TransportPluginException{
+		String transportName = transportPlugin.transportName;
+		if(transportPlugin.transportType == TransportType.packets){
+			if(peerPacketTransportMap.containsKey(transportName))
+				peerPacketTransportMap.get(transportName).packetMangler.sendHandshake(this, notRegistered);
+			else
+				throw new TransportPluginException("This plugin is not available for this PeerNode");
+		}
+		else if(transportPlugin.transportType == TransportType.streams){
+			if(peerStreamTransportMap.containsKey(transportName))
+				peerStreamTransportMap.get(transportName).streamMangler.sendHandshake(this, notRegistered);
+			else
+				throw new TransportPluginException("This plugin is not available for this PeerNode");
+		}
+	}
+	
+	public synchronized void setTransportPeer(SimpleFieldSet fs, boolean fromLocal){
+		Set<String> packetType = peerPacketTransportMap.keySet();
+		for(String transportName:packetType){
+			setTransportPeer(fs, peerPacketTransportMap.get(transportName), fromLocal);
+		}
+		Set<String> streamType = peerStreamTransportMap.keySet();
+		for(String transportName:streamType){
+			setTransportPeer(fs, peerStreamTransportMap.get(transportName), fromLocal);
+		}
+	}
+	
+	/**
+	 * FIXME This method needs to be reviewed<br><br>
+	 * Used to set a peerPacketTransport object's peers using a given SFS.
+	 * Similar code from the PeerNode constructor is used.
+	 * @param fs Any SFS object. The same code applies for metadata fieldset
+	 * @param peerPacketTransport
+	 */
+	public void setTransportPeer(SimpleFieldSet fs, PeerTransport peerTransport, boolean fromLocal){
+		String physical[] = fs.getAll("physical." + peerTransport.transportName);
+		if(physical == null){
+			// Leave it empty
+		} else{
+			for(String physicalPeer:physical){
+				Peer p;
+				try{
+					p = new Peer(physicalPeer, true, true);
+				} catch(HostnameSyntaxException e){
+					if(fromLocal)
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physicalPeer);
+					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physicalPeer);
+					continue;
+				} catch (PeerParseException e){
+					if(fromLocal)
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physicalPeer);
+					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physicalPeer);
+					continue;
+				} catch (UnknownHostException e){
+					if(fromLocal)
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physicalPeer);
+					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physicalPeer);
+					continue;
+				}
+				if(!peerTransport.nominalTransportPeer.contains(p))
+					peerTransport.nominalTransportPeer.addElement(p);
+			}
+		}
+		if(peerTransport.nominalTransportPeer.isEmpty()){
+			Logger.normal(this, "No IP addresses found for identity '" + identityAsBase64String + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
+			peerTransport.detectedTransportPeer = null;
+		} else {
+			peerTransport.detectedTransportPeer = peerTransport.nominalTransportPeer.firstElement();
+		}
+		if(fromLocal){
+			SimpleFieldSet metadata = fs.subset("metadata");
+			Peer p;
+			try {
+				String detected = metadata.get("detected.udp");
+				p = null;
+				if(detected != null)
+					p = new Peer(detected, false);
+			} catch(UnknownHostException e) {
+				p = null;
+				Logger.error(this, "detected." + peerTransport.transportName + metadata.get("detected.udp") + " - " + e, e);
+			} catch(PeerParseException e) {
+				p = null;
+				Logger.error(this, "detected." + peerTransport.transportName + metadata.get("detected.udp") + " - " + e, e);
+			}
+			if(p != null)
+				peerTransport.detectedTransportPeer = p;
+		}
+	}
+	
+	
+	
 	
 }

@@ -90,6 +90,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	 * This object was of type PacketSocketHandler, but now PacketTransportPlugin extends PacketSocketHandler.
 	 */
 	private final PacketTransportPlugin sock;
+	protected final String transportName;
 	private final EntropySource myPacketDataSource;
 	/**
 	 * Objects cached during JFK message exchange: JFK(3,4) with authenticator as key
@@ -179,6 +180,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		this.crypto = crypt;
 		this.usm = node.usm;
 		this.sock = sock;
+		this.transportName = sock.transportName;
 		myPacketDataSource = new EntropySource();
 		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();

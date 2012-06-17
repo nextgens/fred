@@ -46,7 +46,8 @@ public class Peer implements WritableToDataOutputStream {
 
     private final FreenetInetAddress addr;
 	private final int _port;
-	protected final String transportName;
+	/** This field is necessary as Peer based DMT messages will need to know which transport this Peer corresponds to */
+	protected final String transportName; //FIXME Create proper constructors for initialisation. 
 
 	public Peer(DataInput dis) throws IOException {
 		addr = new FreenetInetAddress(dis);

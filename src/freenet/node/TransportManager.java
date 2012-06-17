@@ -45,7 +45,7 @@ public class TransportManager {
 			throw new RuntimeException("Wrong mode of operation");
 		
 		//Check for a valid transport name
-		if( (transportPlugin.transportName == null) && (transportPlugin.transportName.length() < 1) )
+		if( (transportPlugin.transportName == null) || (transportPlugin.transportName.length() < 1) )
 			throw new RuntimeException("Transport name can't be null");
 		
 		//Check if socketMap already has the same transport loaded.
@@ -81,7 +81,7 @@ public class TransportManager {
 			throw new RuntimeException("Wrong mode of operation");
 		
 		//Check for a valid transport name
-		if( (transportPlugin.transportName == null) && (transportPlugin.transportName.length() < 1) )
+		if( (transportPlugin.transportName == null) || (transportPlugin.transportName.length() < 1) )
 			throw new RuntimeException("Transport name can't be null");
 		
 		//Check if socketMap already has the same transport loaded.
@@ -122,6 +122,10 @@ public class TransportManager {
 	 * @param transportPlugin
 	 */
 	void addDefaultTransport(PacketTransportPlugin transportPlugin){
+		if(transportPlugin.transportName != Node.defaultPacketTransportName)
+			throw new RuntimeException("Not the default transport");
+		else if(packetTransportMap.containsKey(transportPlugin.transportName))
+			throw new RuntimeException("Default transport already added");
 		packetTransportMap.put(transportPlugin.transportName, transportPlugin);
 	}
 	/**
@@ -133,6 +137,10 @@ public class TransportManager {
 	 * @param transportPlugin
 	 */
 	void addDefaultTransport(StreamTransportPlugin transportPlugin){
+		if(transportPlugin.transportName != Node.defaultStreamTransportName)
+			throw new RuntimeException("Not the default transport");
+		else if(streamTransportMap.containsKey(transportPlugin.transportName))
+			throw new RuntimeException("Default transport already added");
 		streamTransportMap.put(transportPlugin.transportName, transportPlugin);
 	}
 	

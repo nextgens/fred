@@ -46,10 +46,14 @@ public class PeerStreamTransport extends PeerTransport {
 	protected long transportConnectedTime;
 	
 	
-	public PeerStreamTransport (StreamTransportPlugin transportPlugin, OutgoingStreamMangler streamMangler){
-		super(transportPlugin.transportName);
+	public PeerStreamTransport(StreamTransportPlugin transportPlugin, OutgoingStreamMangler streamMangler, PeerNode pn){
+		super(transportPlugin.transportName, pn);
 		this.transportPlugin = transportPlugin;
 		this.streamMangler = streamMangler;
+	}
+	
+	public PeerStreamTransport(StreamTransportBundle streamTransportBundle, PeerNode pn){
+		this(streamTransportBundle.transportPlugin, streamTransportBundle.streamMangler, pn);
 	}
 	
 }

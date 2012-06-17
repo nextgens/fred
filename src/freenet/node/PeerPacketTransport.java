@@ -43,10 +43,13 @@ public class PeerPacketTransport extends PeerTransport {
 	protected long transportConnectedTime;
 	
 
-	public PeerPacketTransport (PacketTransportPlugin transportPlugin, OutgoingPacketMangler packetMangler){
-		super(transportPlugin.transportName);
+	public PeerPacketTransport(PacketTransportPlugin transportPlugin, OutgoingPacketMangler packetMangler, PeerNode pn){
+		super(transportPlugin.transportName, pn);
 		this.transportPlugin = transportPlugin;
 		this.packetMangler = packetMangler;
 	}
 	
+	public PeerPacketTransport(PacketTransportBundle packetTransportBundle, PeerNode pn){
+		this(packetTransportBundle.transportPlugin, packetTransportBundle.packetMangler, pn);
+	}
 }

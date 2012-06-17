@@ -70,16 +70,16 @@ public class NodeCrypto {
 	/** The transportManager for the mode of operation(darknet, opennet) */
 	public TransportManager transportManager;
 	/** Copy of packet transports got from the transport manager */
-	HashMap<String, PacketTransportPlugin> packetTransportMap;
+	private HashMap<String, PacketTransportPlugin> packetTransportMap;
 	/** Copy of stream transports got from the transport manager */
-	HashMap<String, StreamTransportPlugin> streamTransportMap;
+	private HashMap<String, StreamTransportPlugin> streamTransportMap;
 	/** A list of packet transport with mangler objects and keys. Each PeerNode will use a copy of it.
 	 * We must ensure we take inform existing PeerNode of a new transport.
 	 * All new PeerNode must know of the existing transports.
 	 */
-	private HashMap<String, PeerPacketTransport> peerPacketTransportMap = new HashMap<String, PeerPacketTransport> ();
+	private HashMap<String, PacketTransportBundle> packetTransportBundleMap = new HashMap<String, PacketTransportBundle> ();
 	
-	private HashMap<String, PeerStreamTransport> peerStreamTransportMap = new HashMap<String, PeerStreamTransport> ();
+	private HashMap<String, StreamTransportBundle> streamTransportBundleMap = new HashMap<String, StreamTransportBundle> ();
 	
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
@@ -225,16 +225,16 @@ public class NodeCrypto {
 		packetTransportMap = transportManager.getPacketTransportMap();
 		streamTransportMap = transportManager.getStreamTransportMap();
 		
-		PeerPacketTransport peerPacketTransport = new PeerPacketTransport(socket, packetMangler);
-		peerPacketTransportMap.put(peerPacketTransport.transportPlugin.transportName, peerPacketTransport);
+		PacketTransportBundle packetTransportBundle = new PacketTransportBundle(socket, packetMangler);
+		packetTransportBundleMap.put(packetTransportBundle.transportName, packetTransportBundle);
 		
 		for(String e:packetTransportMap.keySet()){
-			if(e.equals(node.defaultPacketTransportName))
+			if(e.equals(Node.defaultPacketTransportName))
 				continue; //Don't handle default transport as they are handled inherently
 			handleNewTransport(packetTransportMap.get(e));
 		}
 		for(String e:streamTransportMap.keySet()){
-			if(e.equals(node.defaultStreamTransportName))
+			if(e.equals(Node.defaultStreamTransportName))
 				continue; //Don't handle default transport as they are handled inherently
 			handleNewTransport(streamTransportMap.get(e));
 		}
@@ -704,14 +704,14 @@ public class NodeCrypto {
 	 * This method is for the issue that transport plugins might be loaded much later,
 	 * after initialization of this object. 
 	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.
-	 * @param Stream type transport
+	 * @param transportPlugin Packet-type transport
 	 */
 	public void handleNewTransport(PacketTransportPlugin transportPlugin){
 		
 		FNPPacketMangler mangler = new FNPPacketMangler(node, this, transportPlugin);
-		PeerPacketTransport peerPacketTransport = new PeerPacketTransport(transportPlugin, mangler);
-		peerPacketTransportMap.put(transportPlugin.transportName, peerPacketTransport); 
 		transportPlugin.setLowLevelFilter(new IncomingPacketFilterImpl(mangler, node, this));
+		PacketTransportBundle packetTransportBundle = new PacketTransportBundle(transportPlugin, mangler);
+		packetTransportBundleMap.put(transportPlugin.transportName, packetTransportBundle); 
 		
 		//FIXME Have a separate collector and see if we want to try and set the address. Also handle the return value
 		transportPlugin.initPlugin(null, null, 0);
@@ -719,7 +719,7 @@ public class NodeCrypto {
 		synchronized(node){
 			PeerNode[] peers = getPeerNodes();
 			for(PeerNode peer: peers){
-				peer.handleNewPeerTransport(peerPacketTransport);
+				peer.handleNewPeerTransport(packetTransportBundle);
 			}
 		}
 	}	
@@ -728,24 +728,26 @@ public class NodeCrypto {
 	 * This method is for the issue that transport plugins might be loaded much later,
 	 * after initialization of this object. 
 	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.
-	 * @param Stream type transport
-	 * FIXME This part will begin once packets transport are completed
+	 * @param transportPlugin Stream-type transport
+	 * <br>
+	 * FIXME This part will begin once designing packet transports are completed
+	 * FIXME Add implementation for OutgoingStreamMangler, StreamFormat(StreamConnectionFormat), IncomingStreamHandler, PeerMessageTracker
 	 */
 	public void handleNewTransport(StreamTransportPlugin transportPlugin){
 		
 	}
 	
-	public HashMap<String, PeerPacketTransport> getPeerPacketTransportMap(){
-		synchronized(peerPacketTransportMap){
-			return peerPacketTransportMap;
+	public HashMap<String, PacketTransportBundle> getPacketTransportBundleMap(){
+		synchronized(packetTransportBundleMap){
+			return packetTransportBundleMap;
 		}
 	}
 	
-	public synchronized HashMap<String, PeerStreamTransport> getPeerStreamTransportMap(){
-		synchronized(peerStreamTransportMap){
-			return peerStreamTransportMap;
+	public HashMap<String, StreamTransportBundle> getStreamTransportBundleMap(){
+		synchronized(streamTransportBundleMap){
+			return streamTransportBundleMap;
 		}
 	}
-
+	
 }
 

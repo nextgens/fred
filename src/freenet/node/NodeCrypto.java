@@ -701,10 +701,12 @@ public class NodeCrypto {
 	}
 	
 	/**
+     * Detect a new packet transport.
+     * 
 	 * This method is for the issue that transport plugins might be loaded much later,
 	 * after initialization of this object. 
 	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.
-	 * @param Stream type transport
+	 * @param Packet type transport
 	 */
 	public void handleNewTransport(PacketTransportPlugin transportPlugin){
 		
@@ -725,6 +727,8 @@ public class NodeCrypto {
 	}	
 	
 	/**
+     * Detect a new stream transport.
+     * 
 	 * This method is for the issue that transport plugins might be loaded much later,
 	 * after initialization of this object. 
 	 * In case opennet is not started then on creation it'll directly access TransportManager for the transports.

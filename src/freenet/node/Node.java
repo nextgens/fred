@@ -1586,7 +1586,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		/**
 		 * Initialise two transport Managers. Even if opennet is not enabled.
-		 * This helps the plugin register for opennet even though opennet is not enabled
+		 * This allows the plugin to register for opennet even though opennet is not enabled
 		 */
 		TransportManager darknetTransportManager = new TransportManager(this, TransportMode.darknet);
 		TransportManager opennetTransportManager = new TransportManager(this, TransportMode.opennet);

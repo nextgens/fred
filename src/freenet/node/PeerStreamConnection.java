@@ -3,6 +3,12 @@ package freenet.node;
 import freenet.io.comm.Peer;
 import freenet.pluginmanager.StreamTransportPlugin;
 
+/**
+ * This object will be used by PeerNode to maintain sessions keys for various transports. 
+ * A list of PeerConnection will be maintained by PeerNode to handle multiple transports 
+ * @author chetan
+ *
+ */
 public class PeerStreamConnection extends PeerConnection {
 	
 	/** The transport this connection is using. */

@@ -477,8 +477,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		/*
 		 * Get a list of PeerTransport objects - Packets and Streams from the crypto object
 		 */
-		peerPacketTransportMap = crypto.getPeerPacketTransportMap();
-		peerStreamTransportMap = crypto.getPeerStreamTransportMap();
+		createPeerPacketTransportMap(crypto.getPacketTransportBundleMap());
+		createPeerStreamTransportMap(crypto.getStreamTransportBundleMap());
 		
 		assert(crypto.isOpennet == (isOpennet() || isSeed()));
 		this.peers = peers;
@@ -6472,12 +6472,26 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Must be careful using the following two methods as they use hashmap.
 	 * If transportName is same then the object is replaced. We want to use transportName as a unique identifier. 
 	 */
-	public void handleNewPeerTransport(PeerPacketTransport peerPacketTransport){
-		peerPacketTransportMap.put(peerPacketTransport.transportPlugin.transportName, peerPacketTransport);
+	public void handleNewPeerTransport(PacketTransportBundle packetTransportBundle){
+		PeerPacketTransport peerPacketTransport = new PeerPacketTransport(packetTransportBundle, this);
+		peerPacketTransportMap.put(peerPacketTransport.transportName, peerPacketTransport);
 	}
 	
-	public void handleNewPeerTransport(PeerStreamTransport peerStreamTransport){
+	public void handleNewPeerTransport(StreamTransportBundle streamTransportBundle){
+		PeerStreamTransport peerStreamTransport = new PeerStreamTransport(streamTransportBundle, this);
 		peerStreamTransportMap.put(peerStreamTransport.transportPlugin.transportName, peerStreamTransport);
+	}
+	
+	public void createPeerPacketTransportMap(HashMap<String, PacketTransportBundle> transportBundle){
+		for(PacketTransportBundle bundle:transportBundle.values()){
+			handleNewPeerTransport(bundle);
+		}
+	}
+	
+	public void createPeerStreamTransportMap(HashMap<String, StreamTransportBundle> transportBundle){
+		for(StreamTransportBundle bundle:transportBundle.values()){
+			handleNewPeerTransport(bundle);
+		}
 	}
 	
 	public void sendHandshake(boolean notRegistered){
@@ -6507,80 +6521,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
-	public synchronized void setTransportPeer(SimpleFieldSet fs, boolean fromLocal){
+	public synchronized void setTransportPeer(SimpleFieldSet fs, boolean fromLocal, boolean checkHostnameOrIPSyntax){
 		Set<String> packetType = peerPacketTransportMap.keySet();
 		for(String transportName:packetType){
-			setTransportPeer(fs, peerPacketTransportMap.get(transportName), fromLocal);
+			String[] physical = fs.getAll(transportName);
+			peerPacketTransportMap.get(transportName).setTransportPeer(physical, fromLocal, checkHostnameOrIPSyntax);
 		}
 		Set<String> streamType = peerStreamTransportMap.keySet();
 		for(String transportName:streamType){
-			setTransportPeer(fs, peerStreamTransportMap.get(transportName), fromLocal);
+			String[] physical = fs.getAll(transportName);
+			peerStreamTransportMap.get(transportName).setTransportPeer(physical, fromLocal, checkHostnameOrIPSyntax);
 		}
 	}
-	
-	/**
-	 * FIXME This method needs to be reviewed<br><br>
-	 * Used to set a peerPacketTransport object's peers using a given SFS.
-	 * Similar code from the PeerNode constructor is used.
-	 * @param fs Any SFS object. The same code applies for metadata fieldset
-	 * @param peerPacketTransport
-	 */
-	public void setTransportPeer(SimpleFieldSet fs, PeerTransport peerTransport, boolean fromLocal){
-		String physical[] = fs.getAll("physical." + peerTransport.transportName);
-		if(physical == null){
-			// Leave it empty
-		} else{
-			for(String physicalPeer:physical){
-				Peer p;
-				try{
-					p = new Peer(physicalPeer, true, true);
-				} catch(HostnameSyntaxException e){
-					if(fromLocal)
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physicalPeer);
-					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physicalPeer);
-					continue;
-				} catch (PeerParseException e){
-					if(fromLocal)
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physicalPeer);
-					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physicalPeer);
-					continue;
-				} catch (UnknownHostException e){
-					if(fromLocal)
-						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing peer reference in local peers list: " + physicalPeer);
-					System.err.println("Invalid hostname or IP Address syntax error while parsing peer reference: " + physicalPeer);
-					continue;
-				}
-				if(!peerTransport.nominalTransportPeer.contains(p))
-					peerTransport.nominalTransportPeer.addElement(p);
-			}
-		}
-		if(peerTransport.nominalTransportPeer.isEmpty()){
-			Logger.normal(this, "No IP addresses found for identity '" + identityAsBase64String + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
-			peerTransport.detectedTransportPeer = null;
-		} else {
-			peerTransport.detectedTransportPeer = peerTransport.nominalTransportPeer.firstElement();
-		}
-		if(fromLocal){
-			SimpleFieldSet metadata = fs.subset("metadata");
-			Peer p;
-			try {
-				String detected = metadata.get("detected.udp");
-				p = null;
-				if(detected != null)
-					p = new Peer(detected, false);
-			} catch(UnknownHostException e) {
-				p = null;
-				Logger.error(this, "detected." + peerTransport.transportName + metadata.get("detected.udp") + " - " + e, e);
-			} catch(PeerParseException e) {
-				p = null;
-				Logger.error(this, "detected." + peerTransport.transportName + metadata.get("detected.udp") + " - " + e, e);
-			}
-			if(p != null)
-				peerTransport.detectedTransportPeer = p;
-		}
-	}
-	
-	
 	
 	
 }

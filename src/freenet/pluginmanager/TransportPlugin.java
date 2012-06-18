@@ -22,11 +22,11 @@ public abstract class TransportPlugin implements Runnable {
 	public enum TransportType{
 		streams, packets
 	}
-	
-	public final TransportType transportType;
+  	public final TransportType transportType;
 	
 	/**
-	 * Initialize the mode in which the instance of the plugin is to work in.
+	 * Initialize the mode in which the instance of the plugin is to
+     * work in: opennet or darknet
 	 */
 	public final TransportMode transportMode;
 	
@@ -41,6 +41,7 @@ public abstract class TransportPlugin implements Runnable {
 	
 	/**
 	 * Method to initialise and start the plugin. It must create its own thread for listening.
+     * FredPlugin should help with that.
 	 * @param pluginAddress If plugin is configurable then the pluginAddress is used to bind
 	 * @param collector If plugin supports sharing statistics, then the object will be used
 	 * @param startTime 

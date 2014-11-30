@@ -39,7 +39,6 @@ import freenet.client.async.USKRetrieverCallback;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.ECDSA;
 import freenet.crypt.ECDSA.Curves;
-import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
@@ -5839,13 +5838,5 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
                 throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
             }
         return !failed;
-	}
-	
-	protected byte[] getIdentity() {
-	    return identity;
-	}
-	
-	protected byte[] getIdentity(int negType) {
-        return peerECDSAPubKeyHash;
 	}
 }

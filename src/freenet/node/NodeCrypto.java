@@ -65,11 +65,6 @@ public class NodeCrypto {
 	public FNPPacketMangler packetMangler;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
-	byte[] myIdentity; // FIXME: simple identity block; should be unique
-	/** Hash of identity. Used as setup key. */
-	byte[] identityHash;
-	/** Hash of hash of identity i.e. hash of setup key. */
-	byte[] identityHashHash;
 	/** Nonce used to generate ?secureid= for fproxy etc */
 	byte[] clientNonce;
 	/** My ECDSA/P256 keypair and context */
@@ -184,18 +179,6 @@ public class NodeCrypto {
 	 * @throws IOException
 	 */
 	public void readCrypto(SimpleFieldSet fs) throws IOException {
-		String identity = fs.get("identity");
-		if(identity == null)
-			throw new IOException();
-		try {
-			myIdentity = Base64.decode(identity);
-		} catch (IllegalBase64Exception e2) {
-			throw new IOException();
-		}
-		identityHash = SHA256.digest(myIdentity);
-		anonSetupCipher.initialize(identityHash);
-		identityHashHash = SHA256.digest(identityHash);
-
 		SimpleFieldSet ecdsaSFS = null;
 		try {
 			ecdsaSFS = fs.subset("ecdsa");
@@ -217,7 +200,8 @@ public class NodeCrypto {
 		    ecdsaP256 = new ECDSA(Curves.P256);
 		}
         ecdsaPubKeyHash = SHA256.digest(ecdsaP256.getPublicKey().getEncoded());
-		
+        anonSetupCipher.initialize(ecdsaPubKeyHash);
+
 		InsertableClientSSK ark = null;
 
 		// ARK
@@ -277,10 +261,7 @@ public class NodeCrypto {
 		SHA256.returnMessageDigest(md);
 		clientNonce = new byte[32];
 		node.random.nextBytes(clientNonce);
-		myIdentity = Arrays.copyOf(ecdsaPubKeyHash, IDENTITY_LENGTH);
-		identityHash = md.digest(myIdentity);
-		identityHashHash = md.digest(identityHash);
-		anonSetupCipher.initialize(identityHash);
+		anonSetupCipher.initialize(ecdsaPubKeyHash);
         SHA256.returnMessageDigest(md);
 	}
 
@@ -366,10 +347,6 @@ public class NodeCrypto {
 	SimpleFieldSet exportPublicCryptoFieldSet(boolean forSetup, boolean forAnonInitiator) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		int[] negTypes = packetMangler.supportedNegTypes(true);
-		if(!(forSetup || forAnonInitiator))
-			// Can't change on setup.
-			// Anonymous initiator doesn't need identity as we don't use it.
-			fs.putSingle("identity", Base64.encode(myIdentity));
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
 			fs.put("ecdsa", ecdsaP256.asFieldSet(false));
@@ -463,10 +440,6 @@ public class NodeCrypto {
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
 		fs.putSingle("clientNonce", Base64.encode(clientNonce));
 
-	}
-
-	public int getIdentityHash(){
-		return Fields.hashCode(identityHash);
 	}
 	
 	/** Sign data with the node's ECDSA key. The data does not need to be hashed, the signing code

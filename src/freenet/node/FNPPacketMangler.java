@@ -776,8 +776,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			// Check IDr'
 			offset += modulusLength;
 			byte[] expectedIdentityHash = Arrays.copyOfRange(payload, offset, offset + NodeCrypto.IDENTITY_LENGTH);
-			if(!MessageDigest.isEqual(expectedIdentityHash, crypto.identityHash)) {
-				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.identityHash));
+			if(!MessageDigest.isEqual(expectedIdentityHash, crypto.ecdsaPubKeyHash)) {
+				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.ecdsaPubKeyHash));
 				return;
 			}
 		}
@@ -1229,11 +1229,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| (sharedData[7] & 0xFF);
 
         int theirInitialMsgID =
-                unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
-                        getInitialMessageID(pn.identity, crypto.myIdentity);
+                unknownInitiator ? getInitialMessageID(crypto.ecdsaPubKeyHash) :
+                        getInitialMessageID(pn.identity, crypto.ecdsaPubKeyHash);
         int ourInitialMsgID =
-                unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
-                        getInitialMessageID(crypto.myIdentity, pn.identity);
+                unknownInitiator ? getInitialMessageID(crypto.ecdsaPubKeyHash) :
+                        getInitialMessageID(crypto.ecdsaPubKeyHash, pn.identity);
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+theirInitialMsgID+" ours "+ourInitialMsgID);
 
@@ -1725,10 +1725,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| (sharedData[7] & 0xFF);
         pn.theirInitialMsgID =
                 unknownInitiator ? getInitialMessageID(pn.identity) :
-                        getInitialMessageID(pn.identity, crypto.myIdentity);
+                        getInitialMessageID(pn.identity, crypto.ecdsaPubKeyHash);
         pn.ourInitialMsgID =
                 unknownInitiator ? getInitialMessageID(pn.identity) :
-                        getInitialMessageID(crypto.myIdentity, pn.identity);
+                        getInitialMessageID(crypto.ecdsaPubKeyHash, pn.identity);
 			
 		if(logMINOR)
 			Logger.minor(this, "Their initial message ID: "+pn.theirInitialMsgID+" ours "+pn.ourInitialMsgID);

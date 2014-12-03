@@ -36,6 +36,7 @@ import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
 
+import freenet.crypt.SHA256;
 import freenet.node.useralerts.JVMVersionAlert;
 import freenet.support.JVMVersion;
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -853,7 +854,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		darknetCrypto.readCrypto(fs);
 
-		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
+		swapIdentifier = Fields.bytesToLong(darknetCrypto.ecdsaPubKeyHash);
 		String loc = fs.get("location");
 		double locD = Location.getLocation(loc);
 		if (locD == -1.0)
@@ -937,7 +938,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Don't need to set getDarknetPortNumber()
 		// FIXME use a real IP!
 		darknetCrypto.initCrypto();
-		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
+		swapIdentifier = Fields.bytesToLong(SHA256.digest(darknetCrypto.ecdsaPubKeyHash));
 		myName = newName();
 	}
 
@@ -1656,7 +1657,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 
-		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
+		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.ecdsaPubKeyHash);
 
 		// ULPRs
 

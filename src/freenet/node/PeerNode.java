@@ -539,8 +539,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		hashCode = Fields.hashCode(peerECDSAPubKeyHash);
 
 		// Setup incoming and outgoing setup ciphers
-		byte[] nodeKey = crypto.identityHash;
-		byte[] nodeKeyHash = crypto.identityHashHash;
+		byte[] nodeKey = crypto.ecdsaPubKeyHash;
+		byte[] nodeKeyHash = SHA256.digest(crypto.ecdsaPubKeyHash);
 
 		int digestLength = SHA256.getDigestLength();
 		incomingSetupKey = new byte[digestLength];
@@ -550,7 +550,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode, Pe
 		for(int i = 0; i < outgoingSetupKey.length; i++)
 			outgoingSetupKey[i] = (byte) (nodeKeyHash[i] ^ identityHash[i]);
 		if(logMINOR)
-			Logger.minor(this, "Keys:\nIdentity:  " + HexUtil.bytesToHex(crypto.myIdentity) +
+			Logger.minor(this, "Keys:\nIdentity:  " + HexUtil.bytesToHex(crypto.ecdsaPubKeyHash) +
 				"\nThisIdent: " + HexUtil.bytesToHex(identity) +
 				"\nNode:      " + HexUtil.bytesToHex(nodeKey) +
 				"\nNode hash: " + HexUtil.bytesToHex(nodeKeyHash) +

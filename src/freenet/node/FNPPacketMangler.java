@@ -1289,7 +1289,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		// verify the signature
-		byte[] toVerify = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, crypto.getIdentity(negType, false), data);
+		byte[] toVerify = assembleDHParams(nonceInitiatorHashed, nonceResponder, initiatorExponential, responderExponential, crypto.ecdsaPubKeyHash, data);
         if(!ECDSA.verify(Curves.P256, pn.peerECDSAPubKey, sig, toVerify)) {
             Logger.error(this, "The ECDSA signature verification has failed!! JFK(3) - "+pn.getPeer());
             return;
@@ -1520,7 +1520,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int dataLen = hisRef.length + 8 + 9;
 		int nonceSize = getNonceSize(negType);
 		int nonceSizeHashed = HASH_LENGTH;
-	    byte[] identity = crypto.getIdentity(negType, unknownInitiator);
+	    byte[] identity = crypto.ecdsaPubKeyHash;
 		byte[] locallyGeneratedText = new byte[nonceSizeHashed + nonceSize + modulusLength * 2 + identity.length + dataLen + pn.jfkMyRef.length];
 		int bufferOffset = nonceSizeHashed + nonceSize + modulusLength*2;
 		System.arraycopy(jfkBuffer, 0, locallyGeneratedText, 0, bufferOffset);

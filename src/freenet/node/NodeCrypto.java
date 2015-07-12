@@ -537,18 +537,6 @@ public class NodeCrypto {
 		this.socket.getAddressTracker().setBroken();
 	}
 
-	/**
-	 * Get my identity.
-	 * @param unknownInitiator True in JFK(4) for unknownInitiator, false otherwise. 
-	 * Unknown-initiator connections use the hash of the pubkey as the identity to save space in 
-	 * packets 3 and 4. Note that this only applies when we are sending packet 4, i.e. the final 
-	 * reply from the responder to the initiator, thus the responder doesn't need to have the 
-	 * identity. FIXME This complexity can be removed as soon as negType 9 is mandatory!
-	 */
-	public byte[] getIdentity(int negType, boolean unknownInitiator) {
-	    return ecdsaPubKeyHash;
-	}
-
 	public boolean definitelyPortForwarded() {
 		return socket.getDetectedConnectivityStatus() == Status.DEFINITELY_PORT_FORWARDED;
 	}

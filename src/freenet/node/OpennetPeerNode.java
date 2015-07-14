@@ -151,11 +151,6 @@ public class OpennetPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
-	}
- 
-	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
 		// Only equal to seednode of its own type.

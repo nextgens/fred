@@ -98,11 +98,6 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 
 	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return true;
-	}
-
-	@Override
 	protected boolean ignoreLastGoodVersion() {
 		return true;
 	}

@@ -130,11 +130,6 @@ public class SeedServerPeerNode extends PeerNode {
 		node.peers.disconnectAndRemove(this, false, false, false);
 		return ret;
 	}
-
-	@Override
-	protected boolean generateIdentityFromPubkey() {
-		return false;
-	}
 	
 	@Override
 	public boolean shouldDisconnectAndRemoveNow() {

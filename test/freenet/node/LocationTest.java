@@ -1,6 +1,11 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
 import junit.framework.TestCase;
+
+import java.util.Arrays;
 
 public class LocationTest extends TestCase {
 
@@ -132,5 +137,62 @@ public class LocationTest extends TestCase {
         assertEquals(0.0, Location.distanceAllowInvalid(INVALID_2, INVALID_1));
         assertEquals(0.0, Location.distanceAllowInvalid(INVALID_2, INVALID_2));
     }
-}
 
+  double[] universe;
+
+  public void setUp() {
+    // All the tricky cases I can think of
+    universe = new double[]{ 0.0, 0.1, 0.2, 0.21, 0.3, 0.35, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 };
+    // I know it's already sorted.
+    Arrays.sort(universe);
+  }
+
+  // Given our universe, try all the corner cases for each values of the set...
+  // As universe, target and exclude values successively
+  // TODO: fix the exclude values; we don't do the match % Double.MIN_VALUE ...
+  // so we might return "better" values than the legacy method!
+  public void testsmallestDistance() throws Exception {
+    for (double target:universe) {
+      for (double exclude : universe) {
+
+        assertTrue(
+            smallestDistanceLegacy(universe, target, new double[]{exclude}) >=
+            Location.smallestDistance(universe, target, new double[]{exclude}
+            )
+        );
+      }
+    }
+  }
+
+  /**
+   * This is the old, legacy, obviously correct version of Location.smallestDistance()
+   * It doesn't make any assumption on the input
+   *
+   * @param universe
+   * @param target
+   * @param exclusion
+   * @return
+   */
+  public static double smallestDistanceLegacy(double[] universe, double target, double[] exclusion) {
+    double diff = Double.MAX_VALUE;
+    double loc = -1;
+    for (double l : universe) {
+      boolean ignoreLoc = false;
+      for (double ex : exclusion) {
+        if (Math.abs(l - ex) < Double.MIN_VALUE * 2) {
+          ignoreLoc = true;
+          break;
+        }
+      }
+      if (ignoreLoc) {
+        continue;
+      }
+      double newDiff = Location.distance(l, target);
+      if (newDiff < diff) {
+        loc = l;
+        diff = newDiff;
+      }
+    }
+    return loc;
+  }
+}

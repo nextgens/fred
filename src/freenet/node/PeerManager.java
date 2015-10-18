@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -44,6 +41,9 @@ import freenet.support.TimeUtil;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author amphibian
@@ -842,7 +842,10 @@ public class PeerManager {
 
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
 	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime, boolean excludeMandatoryBackoff) {
-		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false, System.currentTimeMillis(), excludeMandatoryBackoff);
+		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion,
+				  addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder,
+				  isLocal, realTime, null, false, System.currentTimeMillis(),
+				  excludeMandatoryBackoff);
 	}
 
 	/**
@@ -870,7 +873,27 @@ public class PeerManager {
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
 	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, long ignoreBackoffUnder, boolean isLocal, boolean realTime,
 	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now, boolean newLoadManagement) {
-		
+	        long t1 = System.currentTimeMillis();
+		double myLoc = node.getLocation();
+
+		double maxDiff = Double.MAX_VALUE;
+		if(!ignoreSelf)
+		  maxDiff = Location.distance(myLoc, target);
+
+		double prevLoc = myLoc;
+		if(pn != null) prevLoc = pn.getLocation();
+
+		// Sort the routedTo locations once for all
+		PeerNode[] routedToArray = routedTo.toArray(new PeerNode[0]);
+		double[] routedToLocations = new double[routedToArray.length+2];
+		// Add out current and past locations so that we can reuse the same logic
+		routedToLocations[0] = myLoc;
+		routedToLocations[1] = prevLoc;
+		for(int i=2; i<routedTo.size(); i++) {
+			routedToLocations[i] = routedToArray[i].getLocation();
+		}
+		Arrays.sort(routedToArray);
+
 		int countWaiting = 0;
 		long soonestTimeoutWakeup = Long.MAX_VALUE;
 		
@@ -879,15 +902,6 @@ public class PeerManager {
 			key = null;
 		if(logMINOR)
 			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length+" key "+key);
-		
-		double myLoc = node.getLocation();
-		
-		double maxDiff = Double.MAX_VALUE;
-		if(!ignoreSelf)
-			maxDiff = Location.distance(myLoc, target);
-		
-		double prevLoc = -1.0;
-		if(pn != null) prevLoc = pn.getLocation();
 
 		/**
 		 * Routing order:
@@ -997,26 +1011,9 @@ public class PeerManager {
 			
 			double[] peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
-				for(double l : peersLocation) {
-					boolean ignoreLoc = false; // Because we've already been there
-					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
-							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
-						ignoreLoc = true;
-					else {
-						for(PeerNode cmpPN : routedTo)
-							if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
-								ignoreLoc = true;
-								break;
-							}
-					}
-					if(ignoreLoc) continue;
-					double newDiff = Location.distance(l, target);
-					if(newDiff < diff) {
-						loc = l;
-						diff = newDiff;
-						direct = false;
-					}
-				}
+				loc = Location.smallestDistance(peersLocation, target, routedToLocations);
+				diff = Location.distance(loc, target);
+				direct = false;
 				if(logMINOR)
 					Logger.minor(this, "The peer "+p+" has published his peer's locations and the closest we have found to the target is "+diff+" away.");
 			}
@@ -1204,7 +1201,10 @@ public class PeerManager {
 					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
 					
 		}
-		
+		if(logMINOR) {
+		  long t2 = System.currentTimeMillis();
+		  Logger.minor(this, "closerPeer() took "+TimeUtil.formatTime(t2-t1));
+		}
 		return best;
 	}
 
@@ -1234,20 +1234,8 @@ public class PeerManager {
 			
 			double[] peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
-				for(double l : peersLocation) {
-					boolean ignoreLoc = false; // Because we've already been there
-					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
-							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
-						continue;
-					// For purposes of recently failed, we haven't routed anywhere else.
-					// However we do need to check for our location, and the source's location.
-					if(ignoreLoc) continue;
-					double newDiff = Location.distance(l, target);
-					if(newDiff < diff) {
-						loc = l;
-						diff = newDiff;
-					}
-				}
+				loc = Location.smallestDistance(peersLocation, target, new double[] { myLoc, prevLoc });
+				diff = Location.distance(loc, target);
 				if(logMINOR)
 					Logger.minor(this, "The peer "+p+" has published his peer's locations and the closest we have found to the target is "+diff+" away.");
 			}

@@ -23,11 +23,12 @@ public class PeerLocation {
 	}
 
 	/** Should only be called in the constructor */
-	public void setPeerLocations(String[] peerLocationsString) {
+	protected void setPeerLocations(String[] peerLocationsString) {
 		if(peerLocationsString != null) {
 			double[] peerLocations = new double[peerLocationsString.length];
 			for(int i = 0; i < peerLocationsString.length; i++)
 				peerLocations[i] = Location.getLocation(peerLocationsString[i]);
+			Arrays.sort(peerLocations);
 			synchronized(this) {
 				currentPeersLocation = peerLocations;
 			}
@@ -38,6 +39,9 @@ public class PeerLocation {
 		return currentLocation;
 	}
 
+  /**
+   * @return a sorted list of our peer's locations
+   */
 	synchronized double[] getPeerLocations() {
 		return currentPeersLocation;
 	}
@@ -78,20 +82,8 @@ public class PeerLocation {
 			if(!Location.equals(currentLocation, newLoc))
 				anythingChanged = true;
 			currentLocation = newLoc;
-			if(currentPeersLocation == null)
+			if(!Arrays.equals(currentPeersLocation, newLocs))
 				anythingChanged = true;
-			else if(currentPeersLocation != null && !anythingChanged) {
-				if(currentPeersLocation.length != newLocs.length)
-					anythingChanged = true;
-				else {
-					for(int i=0;i<currentPeersLocation.length;i++) {
-						if(!Location.equals(currentPeersLocation[i], newLocs[i])) {
-							anythingChanged = true;
-							break;
-						}
-					}
-				}
-			}
 			currentPeersLocation = newLocs;
 			locSetTime = System.currentTimeMillis();
 		}

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
+
 import freenet.support.Logger;
 
 /**
@@ -147,5 +149,63 @@ public class Location {
 	public static boolean isValid(double loc) {
 		return loc >= 0.0 && loc <= 1.0;
 	}
+
+  /**
+   * This method returns the closest location we can find to a target,
+   * in a specific sorted universe of locations while excluding some specific ones
+   *
+   * It uses a binary search algorithm and modulo arithmetic
+   * We use it in PeerManager.closerPeer() to find where to route a specific request next
+   *
+   * FIXME: the exclude list is not compared using modulo arithmetic anymore
+   * @see LocationTest
+   *
+   * @param universe  (sorted!)
+   * @param target
+   * @param exclusion (sorted!)
+   * @return the smallest location we can find
+   */
+  public static double smallestDistance(double[] universe, double target, double[] exclusion) {
+    int low = 0;
+    int high = universe.length - 1;
+
+    while (low <= high) {
+      int mid = (low + high) >>> 1;
+      double midVal = universe[mid];
+      double dist = distance(midVal, target);
+
+      if (midVal < target + Double.MIN_VALUE) {
+	low = mid + 1;  // Neither val is NaN, thisVal is smaller
+      } else if (midVal > target + Double.MIN_VALUE) {
+	high = mid - 1; // Neither val is NaN, thisVal is larger
+      } else {
+	long midBits = Double.doubleToLongBits(midVal);
+	long keyBits = Double.doubleToLongBits(target);
+	if (equals(midBits, keyBits))
+	{
+	  // close enough to return
+	  return (midVal == 1.0 || Arrays.binarySearch(exclusion, midVal) >= 0 ? 0.0 : midVal);
+	}
+	break; // Key found, let's find the best match
+      }
+    }
+
+    double candidate = 0.5;
+    do {
+      int alternateChoice = (low - 1 < 0 ? universe.length-1 : low-1) % universe.length;
+      int mainChoice = (low < 0 ? universe.length-1 : low);
+      double choice1 = distance(universe[alternateChoice], target);
+      double choice2 = distance(universe[mainChoice], target);
+      if(choice1 < choice2 ) {
+	candidate = universe[alternateChoice];
+	low++; // pick another one next iteration
+      } else {
+	candidate = universe[mainChoice];
+	low--; // pick another one next iteration
+      }
+    } while (Arrays.binarySearch(exclusion, candidate) >= 0);
+
+    return candidate;
+  }
 }
 

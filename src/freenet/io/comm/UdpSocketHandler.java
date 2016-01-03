@@ -1,11 +1,14 @@
 package freenet.io.comm;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.DatagramSocketImpl;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketOptions;
 import java.net.SocketTimeoutException;
 import java.util.Random;
 
@@ -45,6 +48,35 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
             Logger.registerClass(UdpSocketHandler.class);
         }
 
+	private void doMagic() {
+		try{
+		if(_sock.getLocalAddress() instanceof Inet6Address ) {
+			Field inner_socket = _sock.getClass().getDeclaredField("impl");
+			inner_socket.setAccessible(true);
+			DatagramSocketImpl
+					dsi =
+					(DatagramSocketImpl) inner_socket.get(_sock);
+			// see /usr/include/linux/in6.h
+			// IPV6_ADDR_PREFERENCES   72
+			// IPV6_PREFER_SRC_PUBLIC          0x0002
+			// IPV6_PREFER_SRC_HOME            0x0400
+			System.out.println(dsi.getOption(SocketOptions.IP_TOS));
+			System.out.println(dsi.getOption(72));
+			dsi.setOption(new Integer(72), new Integer(0x0002 | 0x0400));
+		} else {
+			System.out.println(_sock.getLocalAddress().getHostAddress());
+		}
+		} catch (NoSuchFieldException e) {
+			throw new Error(e);
+		} catch (IllegalStateException e) {
+			throw new Error(e);
+		} catch (IllegalAccessException e) {
+			throw new Error(e);
+		}  catch (SocketException e) {
+			throw new Error(e);
+		}
+	}
+
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
 		this.node = node;
 		this.collector = collector;
@@ -64,8 +96,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			// Exit reasonably quickly
 			_sock.setReuseAddress(true);
+			_sock.setTrafficClass(0x38);
 		} catch (SocketException e) {
-			throw new RuntimeException(e);
+			throw new Error(e);
 		}
 //		}
 		// Only used for debugging, no need to seed from Yarrow
@@ -239,6 +272,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		}
 		InetAddress address = destination.getAddress(false, allowLocalAddresses);
 		assert(address != null);
+		if(address instanceof Inet6Address)
+			doMagic();
 		int port = destination.getPort();
 		DatagramPacket packet = new DatagramPacket(blockToSend, blockToSend.length);
 		packet.setAddress(address);

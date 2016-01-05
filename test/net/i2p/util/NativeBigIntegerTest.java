@@ -1,14 +1,15 @@
 package net.i2p.util;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-
 import junit.framework.TestCase;
+
+import java.math.BigInteger;
+import java.util.Random;
+
+import freenet.support.TestProperty;
 
 public class NativeBigIntegerTest extends TestCase {
 	// Run with <code>ant -Dtest.benchmark=true</code> to do benchmark
-	private static final boolean BENCHMARK = Boolean.getBoolean("test.benchmark");
-	private static int numRuns = BENCHMARK ? 200 : 5;
+	private static int numRuns = TestProperty.BENCHMARK ? 20000 : 5;
 	private int runsProcessed;
 
 	/*
@@ -24,18 +25,17 @@ public class NativeBigIntegerTest extends TestCase {
 	        + "DE2BCBF6955817183995497CEA956AE515D2261898FA0510" + "15728E5A8AACAA68FFFFFFFFFFFFFFFF", 16)
 	        .toByteArray();
 
-	private SecureRandom rand;
+	private Random rand;
 
 	TestIntegers nativeTest;
 	TestIntegers javaTest;
-	//TestIntegers java7Test;
 
 	protected void setUp() throws Exception {
 		if (!NativeBigInteger.isNative())
 			printError("can't load native code");
 
 		printInfo("DEBUG: Warming up the random number generator...");
-		rand = new SecureRandom();
+		rand = new Random(0xAAAAAAAA);
 		rand.nextBoolean();
 		printInfo("DEBUG: Random number generator warmed up");
 
@@ -54,14 +54,6 @@ public class NativeBigIntegerTest extends TestCase {
 			new NativeBigInteger(1, _samplePrime),
 			new NativeBigInteger(1, randbytes)
 		);
-
-		/*java7Test = new TestIntegers7(
-			"java7",
-			new java7.math.BigInteger(_sampleGenerator),
-			new java7.math.BigInteger(_samplePrime),
-			new java7.math.BigInteger(randbytes)
-		);*/
-
 	}
 
 	protected void tearDown() throws Exception {
@@ -72,42 +64,26 @@ public class NativeBigIntegerTest extends TestCase {
 
 		printInfo(nativeTest.getReport());
 		printInfo(javaTest.getReport());
-		//printInfo(java7Test.getReport());
 		printInfo("native = " + (nativeTest.getTime() * 100.0 / javaTest.getTime()) + "% of pure java time");
-		//printInfo("java 7 = " + (java7Test.getTime() * 100.0 / javaTest.getTime()) + "% of pure java time");
 	}
 
 	public void testModPow() {
+		printInfo("Testing modPow()");
 		for (runsProcessed = 0; runsProcessed < numRuns; runsProcessed++) {
 			BigInteger nativeVal = nativeTest.modPow();
 			BigInteger javaVal = javaTest.modPow();
-			//BigInteger java7Val = java7Test.modPow();
 
 			assertEquals(nativeVal, javaVal);
-			//assertEquals(javaVal, java7Val);
-			//assertEquals(java7Val, nativeVal);
-		}
-	}
-
-	public void testDoubleValue() {
-		for (runsProcessed = 0; runsProcessed < numRuns; runsProcessed++) {
-			double nativeVal = nativeTest.doubleValue();
-			double javaVal = javaTest.doubleValue();
-			//double java7Val = java7Test.doubleValue();
-
-			assertEquals(nativeVal, javaVal);
-			//assertEquals(javaVal, java7Val);
-			//assertEquals(java7Val, nativeVal);
 		}
 	}
 
 	private static void printInfo(String info) {
-		if (BENCHMARK)
+		if (TestProperty.BENCHMARK)
 			System.out.println(info);
 	}
 
 	private static void printError(String info) {
-		if (BENCHMARK)
+		if (TestProperty.BENCHMARK)
 			System.err.println(info);
 	}
 
@@ -120,8 +96,6 @@ public class NativeBigIntegerTest extends TestCase {
 
 		protected long time;
 		protected int runs;
-
-		final static int DOUBLE_VAL_TEST_RUNS = 0x10000; // Run the doubleValue() calls within a loop since they are pretty fast..
 
 		public TestIntegers(String n, BigInteger g, BigInteger p, BigInteger k) {
 			name = n;
@@ -138,17 +112,6 @@ public class NativeBigIntegerTest extends TestCase {
 			return r;
 		}
 
-		public double doubleValue() {
-			long start = System.currentTimeMillis();
-			double r = 0.0;
-			for (int i=0; i < DOUBLE_VAL_TEST_RUNS; ++i) {
-				r = g.doubleValue();
-			}
-			++runs;
-			time += System.currentTimeMillis() - start;
-			return r;
-		}
-
 		public long getTime() {
 			return time;
 		}
@@ -158,39 +121,4 @@ public class NativeBigIntegerTest extends TestCase {
 		}
 
 	}
-
-	/*static class TestIntegers7 extends TestIntegers {
-
-		final java7.math.BigInteger g;
-		final java7.math.BigInteger p;
-		final java7.math.BigInteger k;
-
-		public TestIntegers7(String name, java7.math.BigInteger g, java7.math.BigInteger p, java7.math.BigInteger k) {
-			super(name, null, null, null);
-			this.g = g;
-			this.p = p;
-			this.k = k;
-		}
-
-		public BigInteger modPow() {
-			long start = System.currentTimeMillis();
-			java7.math.BigInteger r = g.modPow(p, k);
-			time += System.currentTimeMillis() - start;
-			++runs;
-			return new BigInteger(r.toByteArray());
-		}
-
-		public double doubleValue() {
-			long start = System.currentTimeMillis();
-			double r = 0.0;
-			for (int i=0; i < DOUBLE_VAL_TEST_RUNS; ++i) {
-				r = g.doubleValue();
-			}
-			++runs;
-			time += System.currentTimeMillis() - start;
-			return r;
-		}
-
-	}*/
-
 }

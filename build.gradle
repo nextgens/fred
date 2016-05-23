@@ -3,6 +3,12 @@ apply plugin: 'java'
 repositories {
     jcenter()
     mavenLocal() // TODO: use lib/ instead?
+    ivy {
+        url 'https://downloads.freenetproject.org/'
+        layout 'pattern', {
+            artifact '/alpha/[module][revision].[ext]'
+        }
+    }
 }
 
 configurations {
@@ -31,10 +37,40 @@ sourceSets {
     }
 }
 
+compileJava {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+}
+
+jar {
+    manifest {
+        attributes("Permissions": "all-permissions")
+        attributes("Application-Name": "Freenet REference Daemon")
+        attributes("Required-Ext-Version": 29)
+        attributes("Recommended-Ext-Version": 29)
+        attributes([
+                       "Specification-Title": "Freenet",
+                       "Specification-Version": "0.7.5",
+                       "Specification-Vendor": "freenetproject.org",
+                       "Implementation-Title": "Freenet",
+                       // TODO: add git commit id
+                       "Implementation-Version": "0.7.5 ",
+                       "Implementation-Vendor": "freenetproject.org",
+                   ], "common")
+    }
+}
+
 // In this section you declare the dependencies for your production and test code
 dependencies {
-    compile "org.bouncycastle:bcprov-jdk15on:1.52"
-    provided "org.freenetproject:freenet-ext:29"
+    compile "org.bouncycastle:bcprov-jdk15on:1.54"
+    compile ("org.freenetproject:freenet-ext@jar") {
+        artifact {
+            name = "freenet-ext"
+            extension = "jar"
+            type = "jar"
+            url = "https://downloads.freenetproject.org/latest/freenet-ext.jar"
+        }
+    }
 
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-all:1.9.5"

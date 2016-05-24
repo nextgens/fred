@@ -1,16 +1,15 @@
 language: java
 
 sudo: false
-addons:
-  apt:
-    packages:
-    - ant
-    - ant-optional
-    - junit4
-    - libhamcrest-java
 
+before_cache:
+  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
 cache:
-  apt: true
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+
+script: gradle check -x test
 
 after_success:
   - coveralls

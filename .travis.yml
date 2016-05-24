@@ -9,7 +9,7 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
-script: gradle check --stacktrace
+script: gradle check --info
 
 jdk:
   - oraclejdk8

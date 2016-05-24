@@ -43,9 +43,6 @@ sourceSets {
         java {
             srcDir 'test/'
         }
-        resources {
-            srcDir 'resources/'
-        }
     }
 }
 
@@ -71,6 +68,28 @@ jar {
                    ], "common")
     }
 }
+
+task copyResourcesToClasses << {
+    copy {
+        from "${projectDir}/test/freenet/client/filter/"
+        into "${buildDir}/classes/test/freenet/client/filter/"
+        include 'png/**'
+        include 'bmp/**'
+        include 'mp3/**'
+    }
+    copy {
+        from "${projectDir}/test/freenet/crypt/ciphers/"
+        into "${buildDir}/classes/test/freenet/crypt/ciphers/"
+        include 'rijndael-gladman-test-data/**'
+    }
+
+    copy {
+        from "${projectDir}/test/freenet/"
+        into "${buildDir}/classes/test/freenet/"
+        include 'l10n/*properties'
+    }
+}
+processTestResources.dependsOn copyResourcesToClasses
 
 // In this section you declare the dependencies for your production and test code
 dependencies {

@@ -19,6 +19,9 @@ before_install:
 
 script: ant -Dlib.contrib.get=true
 
+after_success:
+  - coveralls
+
 jdk:
   - oraclejdk8
   - oraclejdk7

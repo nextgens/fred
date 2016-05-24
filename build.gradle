@@ -62,6 +62,24 @@ task buildInfo {
     }
 }
 
+// This isn't used anywhere yet
+// I am not sure of whether we should parse and use the info here or generate the file!
+def classpathDependencies = []
+task parseManifest {
+    Properties properties = new Properties()
+    new File('dependencies.properties').withInputStream {
+        properties.load(it)
+    }
+    for (String s in properties.stringPropertyNames().findAll {
+    it.endsWith(".type") && properties.getProperty(it) == "CLASSPATH" }) {
+        def dep = s.split("\\.")[0]
+        def dep_sha256 = properties.getProperty("${dep}.sha256")
+        def dep_version = properties.getProperty("${dep}.version")
+        def dep_filename = properties.getProperty("${dep}.filename")
+	classpathDependencies.add([ dep, dep_filename, dep_version, dep_sha256 ])
+    }
+}
+
 jar {
     manifest {
         attributes("Permissions": "all-permissions")
@@ -105,14 +123,7 @@ processTestResources.dependsOn copyResourcesToClasses
 // In this section you declare the dependencies for your production and test code
 dependencies {
     compile "org.bouncycastle:bcprov-jdk15on:1.54"
-    compile ("org.freenetproject:freenet-ext@jar") {
-        artifact {
-            name = "freenet-ext"
-            extension = "jar"
-            type = "jar"
-            url = "https://downloads.freenetproject.org/latest/freenet-ext.jar"
-        }
-    }
+    compile "org.freenetproject:freenet-ext@jar"
 
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-all:1.9.5"

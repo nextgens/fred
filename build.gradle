@@ -51,6 +51,17 @@ compileJava {
     targetCompatibility = 1.7
 }
 
+def gitrev
+task buildInfo {
+    try {
+        def cmd = "git describe --always --abbrev=4 --dirty"
+        def proc = cmd.execute()
+        gitrev = proc.text.trim()
+    } catch (java.io.IOException e) {
+        gitrev = "@unknown@"
+    }
+}
+
 jar {
     manifest {
         attributes("Permissions": "all-permissions")
@@ -62,12 +73,12 @@ jar {
                        "Specification-Version": "0.7.5",
                        "Specification-Vendor": "freenetproject.org",
                        "Implementation-Title": "Freenet",
-                       // TODO: add git commit id
-                       "Implementation-Version": "0.7.5 ",
+                       "Implementation-Version": "0.7.5 ${gitrev}",
                        "Implementation-Vendor": "freenetproject.org",
                    ], "common")
     }
 }
+jar.dependsOn buildInfo
 
 task copyResourcesToClasses << {
     copy {

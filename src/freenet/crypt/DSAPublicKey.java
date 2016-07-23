@@ -1,6 +1,8 @@
 /* -*- Mode: java; c-basic-indent: 4; tab-width: 4 -*- */
 package freenet.crypt;
 
+import net.i2p.util.NativeBigInteger;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +19,7 @@ import freenet.support.SimpleFieldSet;
 public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	private static final long serialVersionUID = -1;
-	private final BigInteger y;
+	private final NativeBigInteger y;
 	public static final int PADDED_SIZE = 1024;
 	public static final int HASH_LENGTH = 32;
 	/** Null means use Global.DSAgroupBigA. This makes persistence simpler. */
@@ -27,7 +29,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	public DSAPublicKey(DSAGroup g, BigInteger y) {
 		if(y.signum() != 1)
 			throw new IllegalArgumentException();
-		this.y = y;
+		this.y = new NativeBigInteger(y);
 		if(g == Global.DSAgroupBigA) g = null;
 		this.group = g;
 		if(y.compareTo(getGroup().getP()) > 0)
@@ -39,7 +41,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	 * available, will save some conversions and string allocations.
 	 */
 	public DSAPublicKey(DSAGroup g, String yAsHexString) throws NumberFormatException {
-		this.y = new BigInteger(yAsHexString, 16);
+		this.y = new NativeBigInteger(yAsHexString, 16);
 		if(y.signum() != 1)
 			throw new IllegalArgumentException();
 		if(g == Global.DSAgroupBigA) g = null;
@@ -54,7 +56,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		DSAGroup g = (DSAGroup) DSAGroup.read(is);
 		if(g == Global.DSAgroupBigA) g = null;
 		group = g;
-		y = Util.readMPI(is);
+		y = new NativeBigInteger(Util.readMPI(is));
 		if(y.compareTo(getGroup().getP()) > 0)
 			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + getGroup().getP());
 	}
@@ -65,7 +67,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	private DSAPublicKey(DSAPublicKey key) {
 		fingerprint = null; // regen when needed
-		this.y = new BigInteger(1, key.y.toByteArray());
+		this.y = new NativeBigInteger(1, key.y.toByteArray());
 		DSAGroup g = key.group;
 		if(g != null) g = g.cloneKey();
 		this.group = g;

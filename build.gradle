@@ -159,16 +159,16 @@ test {
     minHeapSize = "128m"
     maxHeapSize = "512m"
     // no inner class
-    include 'freenet/**/*Test.class'
-    exclude 'freenet/**/*$*Test.class'
+    include '**/*Test.class'
+    exclude '**/*$*Test.class'
     workingDir = sourceSets.test.output.classesDir
     scanForTestClasses = false
     systemProperties += [
         "test.l10npath_test": "freenet/l10n/",
-        "test.l10npath_main": "../main/freenet/l10n/"
+        "test.l10npath_main": "../main/freenet/l10n/",
 //	"test.extensive":
 //	"test.verbose":
-//	"test.benchmark":
+	"test.benchmark": true
     ]
 }
 
